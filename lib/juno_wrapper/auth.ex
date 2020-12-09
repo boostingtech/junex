@@ -11,7 +11,7 @@ defmodule JunoWrapper.Auth do
   def get_access_token(client_id, client_secret, is_sandbox) do
     client = create_client(client_id, client_secret)
 
-    {:ok, response} =
+    {:ok, %{status: status} = response} =
       case is_sandbox do
         true ->
           {:ok, env} = post(client, @sandbox_auth_url, @body)
@@ -26,7 +26,19 @@ defmodule JunoWrapper.Auth do
       end
       |> JSON.decode(keys: :atoms)
 
-    response.body["access_token"]
+    case status do
+      400 ->
+        {:error, "Missing \"grant_type: client_credentials\" body"}
+
+      401 ->
+        {:error, "Unauthenticated, wrong credentials"}
+
+      200 ->
+        {:ok, response.body[:access_token]}
+
+      _ ->
+        :error
+    end
   end
 
   defp create_client(client_id, client_secret) do
