@@ -1,4 +1,8 @@
 defmodule JunoWrapper.Auth do
+  @moduledoc """
+  Exposes the get_access_token function, to get the needed token to make all other requests
+  """
+
   alias Tesla.Middleware.JSON
   import Tesla, only: [post: 3]
 

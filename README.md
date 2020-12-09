@@ -1,11 +1,11 @@
+<img src='https://github.com/boostingtech/juno_wrapper/workflows/actions/badge.svg?branch=master' alt='Github Actions status'/>
 # JunoWrapper
 
-**TODO: Add description**
+A simple wrapper to have a better interaction to the [Juno](https://www.juno.com.br/) API.
 
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `juno_wrapper` to your list of dependencies in `mix.exs`:
+Just add `juno_wrapper` to your dependencies list on `mix.exs`:
 
 ```elixir
 def deps do
@@ -14,8 +14,3 @@ def deps do
   ]
 end
 ```
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/juno_wrapper](https://hexdocs.pm/juno_wrapper).
-
