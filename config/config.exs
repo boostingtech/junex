@@ -1,3 +1,3 @@
 use Mix.Config
 
-config :tesla, :adapter, Tesla.Adapter.Hackney
+config :juno_wrapper, :adapter, Tesla.Adapter.Hackney
