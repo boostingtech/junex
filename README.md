@@ -1,4 +1,5 @@
 <img src='https://github.com/boostingtech/juno_wrapper/workflows/actions/badge.svg?branch=master' alt='Github Actions status'/>
+
 # JunoWrapper
 
 A simple wrapper to have a better interaction to the [Juno](https://www.juno.com.br/) API.
