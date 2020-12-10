@@ -13,16 +13,16 @@ defmodule JunoWrapper.Auth do
   @body %{grant_type: :client_credentials}
 
   def get_access_token(client_id, client_secret, is_sandbox) do
-    client = create_client(client_id, client_secret)
+    {:ok, tesla_client} = client().build(client_id, client_secret)
 
     {:ok, %{status: status} = response} =
       case is_sandbox do
         true ->
-          {:ok, env} = post(client, @sandbox_auth_url, @body)
+          {:ok, env} = post(tesla_client, @sandbox_auth_url, @body)
           env
 
         false ->
-          {:ok, env} = post(client, @prod_auth_url, @body)
+          {:ok, env} = post(tesla_client, @prod_auth_url, @body)
           env
 
         _ ->
@@ -32,24 +32,20 @@ defmodule JunoWrapper.Auth do
 
     case status do
       400 ->
-        {:error, "Missing \"grant_type: client_credentials\" body"}
+        {:error, :missing_grant_type_body}
 
       401 ->
-        {:error, "Unauthenticated, wrong credentials"}
+        {:error, {:unauthenticated, :wrong_credentials}}
 
       200 ->
         {:ok, response.body[:access_token]}
 
       _ ->
-        :error
+        {:error, :unkown_error}
     end
   end
 
-  defp create_client(client_id, client_secret) do
-    Tesla.client([
-      Tesla.Middleware.FormUrlencoded,
-      {Tesla.Middleware.BasicAuth, %{username: client_id, password: client_secret}},
-      {Tesla.Middleware.Headers, [{"content-type", "application/x-www-form-urlencoded"}]}
-    ])
+  defp client do
+    Application.get_env(:juno_wrapper, :auth_client)
   end
 end

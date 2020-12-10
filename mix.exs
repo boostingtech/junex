@@ -21,6 +21,7 @@ defmodule JunoWrapper.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:mox, "~> 1.0", only: :test},
       {:tesla, "~> 1.4.0"},
       {:hackney, "~> 1.16.0"},
       {:jason, ">= 1.0.0"},
