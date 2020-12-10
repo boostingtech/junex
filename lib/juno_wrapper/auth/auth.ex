@@ -12,6 +12,9 @@ defmodule JunoWrapper.Auth do
   # @body "grant_type: :client_credentials"
   @body %{grant_type: :client_credentials}
 
+  @behaviour JunoWrapper.Auth.Callback
+
+  @impl true
   def get_access_token(client_id, client_secret, is_sandbox) do
     {:ok, tesla_client} = client().build(client_id, client_secret)
 

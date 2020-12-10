@@ -13,9 +13,9 @@ defmodule JunoWrapper.Auth.Test do
       client_secret = "teste2"
       is_sandbox = true
 
-      Mox.expect(JunoWrapper.Auth.ClientMock, :build, 1, fn ^client_id,
-                                                            ^client_secret,
-                                                            ^is_sandbox ->
+      Mox.expect(JunoWrapper.AuthMock, :get_access_token, 1, fn ^client_id,
+                                                                ^client_secret,
+                                                                ^is_sandbox ->
         {:error, {:unauthenticated, :wrong_credentials}}
       end)
 
