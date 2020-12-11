@@ -1,3 +1,3 @@
 use Mix.Config
 
-config :juno_wrapper, auth_client: JunoWrapper.Auth
+config :juno_wrapper, auth_client: JunoWrapper.Auth.HTTP

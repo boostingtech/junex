@@ -1,4 +1,4 @@
-defmodule JunoWrapper.Auth.Test do
+defmodule JunoWrapper.AuthTest do
   use ExUnit.Case, async: true
 
   alias JunoWrapper.Auth

@@ -1,11 +1,13 @@
 defmodule JunoWrapper.Auth.Callback do
+  @moduledoc """
+  Defines the callback to the Mock Module
+  """
+
   @callback get_access_token(
-              client_id :: String.t(),
-              client_secret :: String.t(),
-              is_sandbox :: boolean()
+              String.t(),
+              String.t(),
+              boolean()
             ) ::
               {:ok, String.t()}
-              | {:error, :missing_grant_type_body}
-              | {:error, {:unauthenticated, :wrong_credentials}}
-              | {:error, :unkown_error}
+              | {:error, atom() | {atom(), atom()}}
 end
