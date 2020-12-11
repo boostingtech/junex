@@ -1,9 +1,9 @@
-defmodule JunoWrapper.MixProject do
+defmodule Junex.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :juno_wrapper,
+      app: :junex,
       version: "0.1.0",
       elixir: "~> 1.11",
       start_permanent: Mix.env() == :prod,

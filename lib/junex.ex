@@ -1,4 +1,4 @@
-defmodule JunoWrapper do
+defmodule Junex do
   @moduledoc """
   Documentation for `JunoWrapper`.
   """

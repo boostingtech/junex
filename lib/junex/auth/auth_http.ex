@@ -1,4 +1,4 @@
-defmodule JunoWrapper.Auth.HTTP do
+defmodule Junex.Auth.HTTP do
   @moduledoc """
   Exposes the get_access_token function, to get the needed token to make all other requests
   """
@@ -11,7 +11,7 @@ defmodule JunoWrapper.Auth.HTTP do
 
   @body %{grant_type: :client_credentials}
 
-  @behaviour JunoWrapper.Auth.Callback
+  @behaviour Junex.Auth.Callback
 
   @impl true
   def get_access_token(client_id, client_secret, is_sandbox) do

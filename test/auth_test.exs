@@ -1,7 +1,7 @@
-defmodule JunoWrapper.AuthTest do
+defmodule Junex.AuthTest do
   use ExUnit.Case, async: true
 
-  alias JunoWrapper.Auth
+  alias Junex.Auth
 
   import Mox
 
@@ -13,9 +13,9 @@ defmodule JunoWrapper.AuthTest do
       client_secret = "teste2"
       is_sandbox = true
 
-      Mox.expect(JunoWrapper.AuthMock, :get_access_token, 1, fn ^client_id,
-                                                                ^client_secret,
-                                                                ^is_sandbox ->
+      Mox.expect(Junex.AuthMock, :get_access_token, 1, fn ^client_id,
+                                                          ^client_secret,
+                                                          ^is_sandbox ->
         {:error, {:unauthenticated, :wrong_credentials}}
       end)
 

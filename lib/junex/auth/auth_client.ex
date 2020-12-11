@@ -1,4 +1,4 @@
-defmodule JunoWrapper.Auth.Callback do
+defmodule Junex.Auth.Callback do
   @moduledoc """
   Defines the callback to the Mock Module
   """

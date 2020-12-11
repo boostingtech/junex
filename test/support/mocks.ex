@@ -1,1 +1,1 @@
-Mox.defmock(JunoWrapper.AuthMock, for: JunoWrapper.Auth.Callback)
+Mox.defmock(Junex.AuthMock, for: Junex.Auth.Callback)

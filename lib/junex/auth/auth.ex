@@ -1,4 +1,4 @@
-defmodule JunoWrapper.Auth do
+defmodule Junex.Auth do
   @moduledoc """
   This Module defines the client's function behaviour
   and exposes the get_access_token function
