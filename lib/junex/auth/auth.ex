@@ -9,6 +9,6 @@ defmodule Junex.Auth do
   end
 
   defp client do
-    Application.get_env(:juno_wrapper, :auth_client)
+    Application.get_env(:junex, :auth_client)
   end
 end
