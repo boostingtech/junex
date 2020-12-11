@@ -15,40 +15,44 @@ defmodule Junex.Auth.HTTP do
 
   @impl true
 
-  def get_access_token(_client_id, _client_secret, is_sandbox) when not is_boolean(is_sandbox),
+  @doc """
+  Return a access_token to be used on other Junex requests
+
+  You can get the client_id and client_secret on the Integration section
+  on your Juno account and generate the pair!
+
+  ## Examples
+
+    iex> Junex.Auth.get_access_token("client_id", "client_secret", true)
+    {:error, {:unauthenticated, :wrong_credentials}}
+  """
+  def get_access_token(_client_id, _client_secret, is_sandbox?) when not is_boolean(is_sandbox?),
     do: {:error, :expected_boolean}
 
-  def get_access_token(client_id, client_secret, is_sandbox)
-      when not is_binary(client_id) or (not is_binary(client_secret) and is_boolean(is_sandbox)),
+  def get_access_token(client_id, client_secret, is_sandbox?)
+      when not is_binary(client_id) or (not is_binary(client_secret) and is_boolean(is_sandbox?)),
       do: {:error, :client_id_or_client_secret_not_a_string}
 
-  def get_access_token(client_id, client_secret, is_sandbox) do
+  @spec get_access_token(String.t(), String.t(), boolean()) ::
+          {:ok, String.t()} | {:error, atom() | {atom(), atom()}}
+  def get_access_token(client_id, client_secret, is_sandbox?) do
     tesla_client = create_client(client_id, client_secret)
 
     {:ok, %{status: status} = response} =
-      case is_sandbox do
-        true ->
-          case post(tesla_client, @sandbox_auth_url, @body) do
-            {:ok, env} ->
-              env
+      case post(tesla_client, get_auth_url(is_sandbox?), @body) do
+        {:ok, env} ->
+          env
 
-            {:error, error} ->
-              %{status: 500, body: %{"error" => error}}
-          end
-
-        false ->
-          case post(tesla_client, @prod_auth_url, @body) do
-            {:ok, env} ->
-              env
-
-            {:error, error} ->
-              %{status: 500, body: %{"error" => error}}
-          end
+        {:error, error} ->
+          %{status: 500, body: %{"error" => error}}
       end
       |> JSON.decode(keys: :atoms)
 
     check_status_code(status, response)
   end
+
+  defp get_auth_url(_sandbox? = true), do: @sandbox_auth_url
+  defp get_auth_url(_not_sandbox), do: @prod_auth_url
 
   defp check_status_code(status, response) do
     case status do
