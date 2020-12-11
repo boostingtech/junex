@@ -54,10 +54,10 @@ defmodule Junex.Client do
         }
 
   @doc """
-  Returns a new charge to be used on Junex.Client.create_charge/2
+  Returns a charge_info map to be used on Junex.Client.create_charges/2
   """
-  @spec get_new_charge(String.t(), integer(), String.t(), float()) :: total_charge_info()
-  def get_new_charge(description, installments, payment_type, amount)
+  @spec get_charge_info(String.t(), integer(), String.t(), float()) :: total_charge_info()
+  def get_charge_info(description, installments, payment_type, amount)
       when is_binary(description) and is_integer(installments) and installments > 1 and
              payment_type in @payment_types and is_float(amount) do
     case payment_type do
@@ -65,7 +65,7 @@ defmodule Junex.Client do
         %{
           description: description,
           installments: installments,
-          paymentTypes: "BOLETO",
+          paymentTypes: ["BOLETO"],
           totalAmount: amount
         }
 
@@ -73,17 +73,17 @@ defmodule Junex.Client do
         %{
           description: description,
           installments: installments,
-          paymentTypes: "CREDIT_CARD",
+          paymentTypes: ["CREDIT_CARD"],
           totalAmount: amount
         }
     end
   end
 
   @doc """
-  Retuns a new charge with installments == 1 to be used on Junex.Client.create_charge/2
+  Retuns a charge_info map with installments == 1 to be used on Junex.Client.create_charges/4
   """
-  @spec get_new_charge(String.t(), String.t(), float()) :: charge_info()
-  def get_new_charge(description, payment_type, amount)
+  @spec get_charge_info(String.t(), String.t(), float()) :: charge_info()
+  def get_charge_info(description, payment_type, amount)
       when is_binary(description) and
              payment_type in @payment_types and is_float(amount) do
     case payment_type do
@@ -91,7 +91,7 @@ defmodule Junex.Client do
         %{
           description: description,
           installments: 1,
-          paymentTypes: "BOLETO",
+          paymentTypes: ["BOLETO"],
           totalAmount: amount
         }
 
@@ -99,17 +99,18 @@ defmodule Junex.Client do
         %{
           description: description,
           installments: 1,
-          paymentTypes: "CREDIT_CARD",
+          paymentTypes: ["CREDIT_CARD"],
           totalAmount: amount
         }
     end
   end
 
   @doc """
-  Return a new billing map to be used on Junex.Client.create_charge/2
+  Return a new charge_billing_info map to be used on Junex.Client.create_charges/4
   """
-  @spec get_billing(String.t(), String.t(), String.t(), String.t()) :: charge_billing_info()
-  def get_billing(name, doc, email, phone)
+  @spec get_charge_billing_info(String.t(), String.t(), String.t(), String.t()) ::
+          charge_billing_info()
+  def get_charge_billing_info(name, doc, email, phone)
       when is_binary(name) and is_binary(doc) and is_binary(email) and is_binary(phone) do
     %{
       name: name,
@@ -124,22 +125,23 @@ defmodule Junex.Client do
 
   ## Parameters
     - client: Got from Junex.Client.create/2
-    - charge_info: Build mannualy or generated with Junex.Client.get_new_charge/3 or /4
-    - billing: Build mannualy or generated with Junex.Client.get_billing/4
+    - charge_info: Build mannualy or generated with Junex.Client.get_charge_info/3 or /4
+    - billing: Build mannualy or generated with Junex.Client.get_charge_billing_info/4
     - mode: :prod | :sandbox
   """
-  @spec create_charge(
+  @spec create_charges(
           %Tesla.Client{},
           total_charge_info() | charge_info(),
           charge_billing_info(),
           atom()
         ) ::
           {:ok, map()} | {:error, atom() | String.t() | {atom(), atom()}}
-  def create_charge(%Tesla.Client{} = client, charge_info, billing, mode)
+  def create_charges(%Tesla.Client{} = client, charge_info, billing, mode)
       when is_map(charge_info) and is_map(billing) and mode in @modes do
     {:ok, %{status: status, body: body}} =
       case post(client, get_url(mode) <> "/charges", %{charge: charge_info, billing: billing}) do
         {:ok, env} ->
+          IO.inspect(env)
           env
 
         {:error, error} ->
@@ -147,7 +149,7 @@ defmodule Junex.Client do
       end
       |> JSON.decode(keys: :string)
 
-    check_status_code(status, body, "_embedded")
+    check_status_code(status, body, "_embedded", "charges")
   end
 
   @doc """
@@ -155,7 +157,7 @@ defmodule Junex.Client do
 
   ## Parameters
     - client: Got from Junex.Client.create/2
-    - charge_id: One of results do Junex.Client.create_charge/4
+    - charge_id: One of results do Junex.Client.create_charges/4
     - mode: :prod | :sandbox
   """
   @spec check_charge_status(%Tesla.Client{}, String.t(), atom()) :: {:ok, map()}
@@ -216,7 +218,7 @@ defmodule Junex.Client do
   Returns a payment_info map to be used on Junex.Client.create_payment/3
 
   ## Parameters
-    - charge_id: Result of one entries of Junex.Client.create_charge/4
+    - charge_id: Result of one entries of Junex.Client.create_charges/4
     - card_info: Build mannualy or got from Junex.Client.get_card_info/1
     - payment_billing_info: Build mannually or got from Junex.Client.get_payment_billing_info/7
   """
@@ -357,6 +359,9 @@ defmodule Junex.Client do
       401 ->
         {:error, :unauthenticated}
 
+      422 ->
+        {:error, :unprocessable_entity}
+
       400 ->
         {:error, {:bad_request, :invalid_request_data}}
 
@@ -379,6 +384,9 @@ defmodule Junex.Client do
       401 ->
         {:error, :unauthenticated}
 
+      422 ->
+        {:error, :unprocessable_entity}
+
       400 ->
         {:error, {:bad_request, :invalid_request_data}}
 
@@ -400,6 +408,9 @@ defmodule Junex.Client do
     case status do
       401 ->
         {:error, :unauthenticated}
+
+      422 ->
+        {:error, :unprocessable_entity}
 
       400 ->
         {:error, {:bad_request, :invalid_request_data}}

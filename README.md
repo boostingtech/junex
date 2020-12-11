@@ -15,3 +15,9 @@ def deps do
   ]
 end
 ```
+
+## TODO
+
+- [ ] Cover tests to helper functions and create_charges and create_payment
+- [ ] Add more funcionalities
+- [ ] Better Module organization

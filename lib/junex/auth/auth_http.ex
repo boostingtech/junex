@@ -53,8 +53,6 @@ defmodule Junex.Auth.HTTP do
       end
       |> JSON.decode(keys: :string)
 
-    IO.inspect(response)
-
     check_status_code(status, response)
   end
 
