@@ -267,7 +267,7 @@ defmodule Junex.Client do
     iex> Junex.Client.list_banks(client, :sandbox)
     {:ok, [%{"name" => "", "number" => ""}]}
   """
-  @spec list_banks(Tesla.client(), atom()) ::
+  @spec list_banks(%Tesla.Client{}, atom()) ::
           {:ok, list(map())}
           | {:error, atom() | String.t() | {atom(), atom()}}
   def list_banks(%Tesla.Client{} = client, mode) when mode in @modes do
@@ -332,7 +332,7 @@ defmodule Junex.Client do
     iex> Junex.Client.create("access_token", "resource_token")
     {:ok, client}
   """
-  @spec create(String.t(), String.t()) :: {:ok, Tesla.client()}
+  @spec create(String.t(), String.t()) :: {:ok, %Tesla.Client{}}
   def create(access_token, resource_token)
       when is_binary(access_token) and is_binary(resource_token) do
     client =
@@ -353,31 +353,6 @@ defmodule Junex.Client do
   def create(access_token, resource_token)
       when not is_binary(access_token) or not is_binary(resource_token),
       do: {:error, :expected_token_to_be_string}
-
-  defp check_status_code(status, body, key) do
-    case status do
-      401 ->
-        {:error, :unauthenticated}
-
-      422 ->
-        {:error, :unprocessable_entity}
-
-      400 ->
-        {:error, {:bad_request, :invalid_request_data}}
-
-      200 ->
-        {:ok, body[key]}
-
-      201 ->
-        {:ok, body[key]}
-
-      500 ->
-        {:error, body["error"]}
-
-      _ ->
-        {:error, :unkown_error}
-    end
-  end
 
   defp check_status_code(status, body, key1, key2) do
     case status do
