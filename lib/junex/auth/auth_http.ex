@@ -26,13 +26,13 @@ defmodule Junex.Auth.HTTP do
     iex> Junex.Auth.get_access_token("client_id", "client_secret", true)
     {:error, {:unauthenticated, :wrong_credentials}}
   """
-  @spec get_access_token(String.t(), String.t(), boolean()) ::
+  @spec get_access_token(String.t(), String.t(), atom()) ::
           {:ok, String.t()} | {:error, atom() | {atom(), atom()}}
-  def get_access_token(_client_id, _client_secret, is_sandbox?) when not is_boolean(is_sandbox?),
-    do: {:error, :expected_boolean}
+  def get_access_token(_client_id, _client_secret, is_sandbox?) when not is_atom(is_sandbox?),
+    do: {:error, :expected_atom}
 
   def get_access_token(client_id, client_secret, is_sandbox?)
-      when not is_binary(client_id) or (not is_binary(client_secret) and is_boolean(is_sandbox?)),
+      when not is_binary(client_id) or (not is_binary(client_secret) and is_atom(is_sandbox?)),
       do: {:error, :client_id_or_client_secret_not_a_string}
 
   def get_access_token(client_id, client_secret, is_sandbox?) do
@@ -46,13 +46,13 @@ defmodule Junex.Auth.HTTP do
         {:error, error} ->
           %{status: 500, body: %{"error" => error}}
       end
-      |> JSON.decode(keys: :atoms)
+      |> JSON.decode(keys: :string)
 
     check_status_code(status, response)
   end
 
-  defp get_auth_url(_sandbox? = true), do: @sandbox_auth_url
-  defp get_auth_url(_not_sandbox), do: @prod_auth_url
+  defp get_auth_url(:sandbox), do: @sandbox_auth_url
+  defp get_auth_url(:prod), do: @prod_auth_url
 
   defp check_status_code(status, response) do
     case status do
