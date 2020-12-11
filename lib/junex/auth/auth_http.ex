@@ -28,23 +28,29 @@ defmodule Junex.Auth.HTTP do
     {:ok, %{status: status} = response} =
       case is_sandbox do
         true ->
-          with {:ok, env} <- post(tesla_client, @sandbox_auth_url, @body) do
-            env
-          else
+          case post(tesla_client, @sandbox_auth_url, @body) do
+            {:ok, env} ->
+              env
+
             {:error, error} ->
               %{status: 500, body: %{"error" => error}}
           end
 
         false ->
-          with {:ok, env} <- post(tesla_client, @prod_auth_url, @body) do
-            env
-          else
+          case post(tesla_client, @prod_auth_url, @body) do
+            {:ok, env} ->
+              env
+
             {:error, error} ->
               %{status: 500, body: %{"error" => error}}
           end
       end
       |> JSON.decode(keys: :atoms)
 
+    check_status_code(status, response)
+  end
+
+  defp check_status_code(status, response) do
     case status do
       401 ->
         {:error, {:unauthenticated, :wrong_credentials}}
