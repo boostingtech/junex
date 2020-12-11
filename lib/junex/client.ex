@@ -15,13 +15,13 @@ defmodule Junex.Client do
 
   @payment_types [:boleto, :credit_card]
 
-  @type new_charge_total :: %{
+  @type total_charge_info :: %{
           description: String.t(),
           installments: integer(),
           totalAmount: float(),
           paymentTypes: String.t()
         }
-  @type new_charge_amount :: %{
+  @type charge_info :: %{
           description: String.t(),
           installments: integer(),
           amount: float(),
@@ -32,8 +32,8 @@ defmodule Junex.Client do
   @doc """
   Returns a new charge to be used on Junex.Client.create_charge/2
   """
-  @spec get_new_charge(String.t(), integer(), String.t(), float()) :: new_charge_total()
-  def create_new_charge(description, installments, payment_type, amount)
+  @spec get_new_charge(String.t(), integer(), String.t(), float()) :: total_charge_info()
+  def get_new_charge(description, installments, payment_type, amount)
       when is_binary(description) and is_integer(installments) and installments > 1 and
              payment_type in @payment_types and is_float(amount) do
     case payment_type do
@@ -58,8 +58,8 @@ defmodule Junex.Client do
   @doc """
   Retuns a new charge with installments == 1 to be used on Junex.Client.create_charge/2
   """
-  @spec get_new_charge(String.t(), String.t(), float()) :: new_charge_amount()
-  def create_new_charge(description, payment_type, amount)
+  @spec get_new_charge(String.t(), String.t(), float()) :: charge_info()
+  def get_new_charge(description, payment_type, amount)
       when is_binary(description) and
              payment_type in @payment_types and is_float(amount) do
     case payment_type do
@@ -79,6 +79,49 @@ defmodule Junex.Client do
           totalAmount: amount
         }
     end
+  end
+
+  @doc """
+  Return a new billing map to be used on Junex.Client.create_charge/2
+  """
+  @spec get_billing(String.t(), String.t(), String.t(), String.t()) :: billing()
+  def get_billing(name, doc, email, phone)
+      when is_binary(name) and is_binary(doc) and is_binary(email) and is_binary(phone) do
+    %{
+      name: name,
+      document: doc,
+      email: email,
+      phone: phone
+    }
+  end
+
+  @doc """
+  Creates and return a new charge
+
+  ## Parameters
+    - charge_info: Build mannualy or generated with Junex.Client.get_new_charge/3 or /4
+    - billing: Build mannualy or generated with Junex.Client.get_billing/4
+  """
+  @spec create_charge(
+          %Tesla.Client{},
+          total_charge_info() | charge_info(),
+          billing(),
+          atom()
+        ) ::
+          {:ok, map()} | {:error, atom() | String.t() | {atom(), atom()}}
+  def create_charge(%Tesla.Client{} = client, charge_info, billing, mode)
+      when is_map(charge_info) and is_map(billing) and mode in @modes do
+    {:ok, %{status: status, body: body}} =
+      case post(client, get_url(mode) <> "/charges", %{charge: charge_info, billing: billing}) do
+        {:ok, env} ->
+          env
+
+        {:error, error} ->
+          get_conn_error(error)
+      end
+      |> JSON.decode(keys: :string)
+
+    check_status_code(status, body, "_embedded")
   end
 
   @doc """
