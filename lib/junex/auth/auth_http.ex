@@ -14,21 +14,34 @@ defmodule Junex.Auth.HTTP do
   @behaviour Junex.Auth.Callback
 
   @impl true
+
+  def get_access_token(_client_id, _client_secret, is_sandbox) when not is_boolean(is_sandbox),
+    do: {:error, :expected_boolean}
+
+  def get_access_token(client_id, client_secret, is_sandbox)
+      when not is_binary(client_id) or (not is_binary(client_secret) and is_boolean(is_sandbox)),
+      do: {:error, :client_id_or_client_secret_not_a_string}
+
   def get_access_token(client_id, client_secret, is_sandbox) do
     tesla_client = create_client(client_id, client_secret)
 
     {:ok, %{status: status} = response} =
       case is_sandbox do
         true ->
-          {:ok, env} = post(tesla_client, @sandbox_auth_url, @body)
-          env
+          with {:ok, env} <- post(tesla_client, @sandbox_auth_url, @body) do
+            env
+          else
+            {:error, error} ->
+              %{status: 500, body: %{"error" => error}}
+          end
 
         false ->
-          {:ok, env} = post(tesla_client, @prod_auth_url, @body)
-          env
-
-        _ ->
-          {:error, :expected_boolean}
+          with {:ok, env} <- post(tesla_client, @prod_auth_url, @body) do
+            env
+          else
+            {:error, error} ->
+              %{status: 500, body: %{"error" => error}}
+          end
       end
       |> JSON.decode(keys: :atoms)
 
@@ -38,6 +51,9 @@ defmodule Junex.Auth.HTTP do
 
       200 ->
         {:ok, response.body[:access_token]}
+
+      500 ->
+        {:error, response.body[:error]}
 
       _ ->
         {:error, :unkown_error}
