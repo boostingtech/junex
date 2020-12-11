@@ -1,4 +1,4 @@
-defmodule JunoWrapper.Auth do
+defmodule Junex.Auth.HTTP do
   @moduledoc """
   Exposes the get_access_token function, to get the needed token to make all other requests
   """
@@ -9,39 +9,38 @@ defmodule JunoWrapper.Auth do
   @sandbox_auth_url "https://sandbox.boletobancario.com/authorization-server/oauth/token"
   @prod_auth_url "https://api.juno.com.br/authorization-server/oauth/token"
 
-  # @body "grant_type: :client_credentials"
   @body %{grant_type: :client_credentials}
 
+  @behaviour Junex.Auth.Callback
+
+  @impl true
   def get_access_token(client_id, client_secret, is_sandbox) do
-    client = create_client(client_id, client_secret)
+    tesla_client = create_client(client_id, client_secret)
 
     {:ok, %{status: status} = response} =
       case is_sandbox do
         true ->
-          {:ok, env} = post(client, @sandbox_auth_url, @body)
+          {:ok, env} = post(tesla_client, @sandbox_auth_url, @body)
           env
 
         false ->
-          {:ok, env} = post(client, @prod_auth_url, @body)
+          {:ok, env} = post(tesla_client, @prod_auth_url, @body)
           env
 
         _ ->
-          {:error, "Expected \"is_sandbox\" to be a boolean"}
+          {:error, :expected_boolean}
       end
       |> JSON.decode(keys: :atoms)
 
     case status do
-      400 ->
-        {:error, "Missing \"grant_type: client_credentials\" body"}
-
       401 ->
-        {:error, "Unauthenticated, wrong credentials"}
+        {:error, {:unauthenticated, :wrong_credentials}}
 
       200 ->
         {:ok, response.body[:access_token]}
 
       _ ->
-        :error
+        {:error, :unkown_error}
     end
   end
 

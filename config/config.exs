@@ -1,3 +1,5 @@
 use Mix.Config
 
-config :juno_wrapper, :adapter, Tesla.Adapter.Hackney
+config :junex, :adapter, Tesla.Adapter.Hackney
+
+import_config "#{Mix.env()}.exs"
