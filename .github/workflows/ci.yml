@@ -27,7 +27,7 @@ jobs:
   
   check_formatted:
     name: Check formatted
-    runs-ons: ubuntu-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2.3.2
       - uses: actions/setup-elixir@v1.4.0
@@ -39,7 +39,7 @@ jobs:
 
   compile_without_warnings:
     name: Compile without warnings
-    runs-ons: ubuntu-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2.3.2
       - uses: actions/setup-elixir@v1.4.0
