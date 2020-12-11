@@ -11,16 +11,14 @@ defmodule Junex.AuthTest do
     test "returns 401 when credentials are invalid" do
       client_id = "teste1"
       client_secret = "teste2"
-      is_sandbox = true
+      mode = :sandbox
 
-      Mox.expect(Junex.AuthMock, :get_access_token, 1, fn ^client_id,
-                                                          ^client_secret,
-                                                          ^is_sandbox ->
+      Mox.expect(Junex.AuthMock, :get_access_token, 1, fn ^client_id, ^client_secret, ^mode ->
         {:error, {:unauthenticated, :wrong_credentials}}
       end)
 
       assert {:error, {:unauthenticated, :wrong_credentials}} =
-               Auth.get_access_token(client_id, client_secret, is_sandbox)
+               Auth.get_access_token(client_id, client_secret, mode)
     end
 
     test "returns error when is_sandbox is not a boolean" do
@@ -37,15 +35,13 @@ defmodule Junex.AuthTest do
     test "returns ok and token if data is correct" do
       client_id = "teste1"
       client_secret = "teste2"
-      is_sandbox = true
+      mode = true
 
-      Mox.expect(Junex.AuthMock, :get_access_token, 1, fn ^client_id,
-                                                          ^client_secret,
-                                                          ^is_sandbox ->
+      Mox.expect(Junex.AuthMock, :get_access_token, 1, fn ^client_id, ^client_secret, ^mode ->
         {:ok, "access_token"}
       end)
 
-      assert {:ok, access_token} = Auth.get_access_token(client_id, client_secret, is_sandbox)
+      assert {:ok, access_token} = Auth.get_access_token(client_id, client_secret, mode)
       assert is_binary(access_token)
     end
   end

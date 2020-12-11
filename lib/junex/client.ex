@@ -1,0 +1,188 @@
+defmodule Junex.Client do
+  @moduledoc """
+  Main Module! Defines all possible functions to call Juno API
+  """
+
+  import Tesla, only: [post: 3, get: 3]
+  alias Tesla.Middleware.JSON
+
+  @prod_url "https://api.juno.com.br"
+  @sandbox_url "https://sandbox.boletobancario.com/api-integration"
+
+  @version Mix.Project.config()[:version]
+
+  @modes [:prod, :sandbox]
+
+  @doc """
+  List all possible banks for Juno transfers
+
+  ## Params
+    - client: from Junex.Client.create/2
+    - mode: :prod | :sandbox
+
+  ## Examples
+    iex> Junex.Client.list_banks(client, :sandbox)
+    {:ok, [%{"name" => "", "number" => ""}]}
+  """
+  @spec list_banks(Tesla.client(), atom()) ::
+          {:ok, list(map())}
+          | {:error, atom() | String.t() | {atom(), atom()}}
+  def list_banks(%Tesla.Client{} = client, mode) when is_atom(mode) and mode in @modes do
+    {:ok, %{status: status, body: body}} =
+      case get(client, get_url(mode) <> "/data/banks", []) do
+        {:ok, env} ->
+          IO.inspect(env)
+          env
+
+        {:error, error} ->
+          get_conn_error(error)
+      end
+      |> JSON.decode(keys: :string)
+
+    check_status_code(status, body, "_embedded", "banks")
+  end
+
+  def list_banks(%Tesla.Client{} = _client, mode) when not is_atom(mode) or mode not in @modes,
+    do: get_atom_error()
+
+  def list_banks(_invalid, _mode), do: get_client_error()
+
+  @doc """
+  Return you current balance!
+
+  ## Parameters
+    - client: Get from Junex.Client.create/2
+    - mode: :prod | :sandbox
+
+  ## Examples
+    iex> Junex.Client.get_balance(client, :sandbox)
+    {:ok, %{"links" => _, "balance" => _, "transferableBalance" => _, "withheldBalance" => _}}
+  """
+  @spec get_balance(%Tesla.Client{}, atom()) :: {:ok, map()} | {:error, atom()}
+  def get_balance(%Tesla.Client{} = client, mode) when is_atom(mode) and mode in @modes do
+    {:ok, %{status: status, body: body}} =
+      case get(client, get_url(mode) <> "/balance", []) do
+        {:ok, env} ->
+          env
+
+        {:error, error} ->
+          get_conn_error(error)
+      end
+      |> JSON.decode(keys: :string)
+
+    check_status_code(status, body)
+  end
+
+  def get_balance(%Tesla.Client{} = _client, mode) when not is_atom(mode) or mode not in @modes,
+    do: get_atom_error()
+
+  def get_balance(_invalid, _mode), do: get_client_error()
+
+  @doc """
+  Returns a new client to perform other requests!
+
+  ## Params
+    - access_token: Got from Junex.Auth.get_access_token
+    - resource_token: You can generate one on your Juno's account, is the "Private Token"
+
+  ## Examples
+    iex> Junex.Client.create("access_token", "resource_token")
+    {:ok, client}
+  """
+  @spec create(String.t(), String.t()) :: {:ok, Tesla.client()}
+  def create(access_token, resource_token)
+      when is_binary(access_token) and is_binary(resource_token) do
+    client =
+      Tesla.client([
+        Tesla.Middleware.JSON,
+        {Tesla.Middleware.Headers,
+         [
+           {"authorization", "Bearer #{access_token}"},
+           {"X-Resource-Token", resource_token},
+           {"user-agent", "junex/#{@version}"},
+           {"X-Api-Version", 2}
+         ]}
+      ])
+
+    {:ok, client}
+  end
+
+  def create(access_token, resource_token)
+      when not is_binary(access_token) or not is_binary(resource_token),
+      do: {:error, :expected_token_to_be_string}
+
+  defp check_status_code(status, body, key) do
+    case status do
+      401 ->
+        {:error, :unauthenticated}
+
+      400 ->
+        {:error, {:bad_request, :invalid_request_data}}
+
+      200 ->
+        {:ok, body[key]}
+
+      201 ->
+        {:ok, body[key]}
+
+      500 ->
+        {:error, body["error"]}
+
+      _ ->
+        {:error, :unkown_error}
+    end
+  end
+
+  defp check_status_code(status, body, key1, key2) do
+    case status do
+      401 ->
+        {:error, :unauthenticated}
+
+      400 ->
+        {:error, {:bad_request, :invalid_request_data}}
+
+      200 ->
+        {:ok, body[key1][key2]}
+
+      201 ->
+        {:ok, body[key1][key2]}
+
+      500 ->
+        {:error, body["error"]}
+
+      _ ->
+        {:error, :unkown_error}
+    end
+  end
+
+  defp check_status_code(status, body) do
+    case status do
+      401 ->
+        {:error, :unauthenticated}
+
+      400 ->
+        {:error, {:bad_request, :invalid_request_data}}
+
+      200 ->
+        {:ok, body}
+
+      201 ->
+        {:ok, body}
+
+      500 ->
+        {:error, body["error"]}
+
+      _ ->
+        {:error, :unkown_error}
+    end
+  end
+
+  defp get_url(:prod), do: @prod_url
+  defp get_url(:sandbox), do: @sandbox_url
+
+  defp get_conn_error(error), do: %{status: 500, body: %{"error" => error}}
+
+  defp get_atom_error, do: {:error, :expected_mode_to_be_valid}
+
+  defp get_client_error, do: {:error, :expected_tesla_client}
+end
