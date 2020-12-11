@@ -13,10 +13,78 @@ defmodule Junex.Client do
 
   @modes [:prod, :sandbox]
 
+  @payment_types [:boleto, :credit_card]
+
+  @type new_charge_total :: %{
+          description: String.t(),
+          installments: integer(),
+          totalAmount: float(),
+          paymentTypes: String.t()
+        }
+  @type new_charge_amount :: %{
+          description: String.t(),
+          installments: integer(),
+          amount: float(),
+          paymentTypes: String.t()
+        }
+  @type billing :: %{name: String.t(), document: String.t(), email: String.t(), phone: String.t()}
+
+  @doc """
+  Returns a new charge to be used on Junex.Client.create_charge/2
+  """
+  @spec get_new_charge(String.t(), integer(), String.t(), float()) :: new_charge_total()
+  def create_new_charge(description, installments, payment_type, amount)
+      when is_binary(description) and is_integer(installments) and installments > 1 and
+             payment_type in @payment_types and is_float(amount) do
+    case payment_type do
+      :boleto ->
+        %{
+          description: description,
+          installments: installments,
+          paymentTypes: "BOLETO",
+          totalAmount: amount
+        }
+
+      :credit_card ->
+        %{
+          description: description,
+          installments: installments,
+          paymentTypes: "CREDIT_CARD",
+          totalAmount: amount
+        }
+    end
+  end
+
+  @doc """
+  Retuns a new charge with installments == 1 to be used on Junex.Client.create_charge/2
+  """
+  @spec get_new_charge(String.t(), String.t(), float()) :: new_charge_amount()
+  def create_new_charge(description, payment_type, amount)
+      when is_binary(description) and
+             payment_type in @payment_types and is_float(amount) do
+    case payment_type do
+      :boleto ->
+        %{
+          description: description,
+          installments: 1,
+          paymentTypes: "BOLETO",
+          totalAmount: amount
+        }
+
+      :credit_card ->
+        %{
+          description: description,
+          installments: 1,
+          paymentTypes: "CREDIT_CARD",
+          totalAmount: amount
+        }
+    end
+  end
+
   @doc """
   List all possible banks for Juno transfers
 
-  ## Params
+  ## Parameters
     - client: from Junex.Client.create/2
     - mode: :prod | :sandbox
 

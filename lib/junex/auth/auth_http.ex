@@ -21,6 +21,11 @@ defmodule Junex.Auth.HTTP do
   You can get the client_id and client_secret on the Integration section
   on your Juno account and generate the pair!
 
+  ## Parameters
+    - client_id: string
+    - client_secret: string
+    - mode: :prod | :sandbox
+
   ## Examples
 
     iex> Junex.Auth.get_access_token("client_id", "client_secret", true)
