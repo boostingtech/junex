@@ -26,6 +26,8 @@ defmodule Junex.Auth.HTTP do
     iex> Junex.Auth.get_access_token("client_id", "client_secret", true)
     {:error, {:unauthenticated, :wrong_credentials}}
   """
+  @spec get_access_token(String.t(), String.t(), boolean()) ::
+          {:ok, String.t()} | {:error, atom() | {atom(), atom()}}
   def get_access_token(_client_id, _client_secret, is_sandbox?) when not is_boolean(is_sandbox?),
     do: {:error, :expected_boolean}
 
@@ -33,8 +35,6 @@ defmodule Junex.Auth.HTTP do
       when not is_binary(client_id) or (not is_binary(client_secret) and is_boolean(is_sandbox?)),
       do: {:error, :client_id_or_client_secret_not_a_string}
 
-  @spec get_access_token(String.t(), String.t(), boolean()) ::
-          {:ok, String.t()} | {:error, atom() | {atom(), atom()}}
   def get_access_token(client_id, client_secret, is_sandbox?) do
     tesla_client = create_client(client_id, client_secret)
 
