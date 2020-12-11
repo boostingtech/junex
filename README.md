@@ -18,6 +18,8 @@ def deps do
 end
 ```
 
+Online documentation can be found on [Hex.pm](https://hexdocs.pm/junex/api-reference.html)
+
 ## TODO
 
 - [ ] Cover tests to helper functions and create_charges and create_payment
