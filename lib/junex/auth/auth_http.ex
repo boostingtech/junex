@@ -21,6 +21,11 @@ defmodule Junex.Auth.HTTP do
   You can get the client_id and client_secret on the Integration section
   on your Juno account and generate the pair!
 
+  ## Parameters
+    - client_id: string
+    - client_secret: string
+    - mode: :prod | :sandbox
+
   ## Examples
 
     iex> Junex.Auth.get_access_token("client_id", "client_secret", true)
@@ -28,18 +33,18 @@ defmodule Junex.Auth.HTTP do
   """
   @spec get_access_token(String.t(), String.t(), atom()) ::
           {:ok, String.t()} | {:error, atom() | {atom(), atom()}}
-  def get_access_token(_client_id, _client_secret, is_sandbox?) when not is_atom(is_sandbox?),
+  def get_access_token(_client_id, _client_secret, mode) when not is_atom(mode),
     do: {:error, :expected_atom}
 
-  def get_access_token(client_id, client_secret, is_sandbox?)
-      when not is_binary(client_id) or (not is_binary(client_secret) and is_atom(is_sandbox?)),
+  def get_access_token(client_id, client_secret, mode)
+      when not is_binary(client_id) or (not is_binary(client_secret) and is_atom(mode)),
       do: {:error, :client_id_or_client_secret_not_a_string}
 
-  def get_access_token(client_id, client_secret, is_sandbox?) do
-    tesla_client = create_client(client_id, client_secret)
+  def get_access_token(client_id, client_secret, mode) do
+    {:ok, tesla_client} = create_client(client_id, client_secret)
 
     {:ok, %{status: status} = response} =
-      case post(tesla_client, get_auth_url(is_sandbox?), @body) do
+      case post(tesla_client, get_auth_url(mode), @body) do
         {:ok, env} ->
           env
 
@@ -60,10 +65,10 @@ defmodule Junex.Auth.HTTP do
         {:error, {:unauthenticated, :wrong_credentials}}
 
       200 ->
-        {:ok, response.body[:access_token]}
+        {:ok, response.body["access_token"]}
 
       500 ->
-        {:error, response.body[:error]}
+        {:error, response.body["error"]}
 
       _ ->
         {:error, :unkown_error}
@@ -71,10 +76,13 @@ defmodule Junex.Auth.HTTP do
   end
 
   defp create_client(client_id, client_secret) do
-    Tesla.client([
-      Tesla.Middleware.FormUrlencoded,
-      {Tesla.Middleware.BasicAuth, %{username: client_id, password: client_secret}},
-      {Tesla.Middleware.Headers, [{"content-type", "application/x-www-form-urlencoded"}]}
-    ])
+    client =
+      Tesla.client([
+        Tesla.Middleware.FormUrlencoded,
+        {Tesla.Middleware.BasicAuth, %{username: client_id, password: client_secret}},
+        {Tesla.Middleware.Headers, [{"content-type", "application/x-www-form-urlencoded"}]}
+      ])
+
+    {:ok, client}
   end
 end

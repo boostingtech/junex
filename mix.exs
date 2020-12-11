@@ -6,9 +6,14 @@ defmodule Junex.MixProject do
       app: :junex,
       version: "0.1.0",
       elixir: "~> 1.11",
+      build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      elixirc_paths: elixirc_paths(Mix.env())
+      elixirc_paths: elixirc_paths(Mix.env()),
+      package: package(),
+      name: "Junex",
+      source_url: "https://github.com/boostingtech/junex",
+      description: description()
     ]
   end
 
@@ -26,7 +31,19 @@ defmodule Junex.MixProject do
       {:tesla, "~> 1.4.0"},
       {:hackney, "~> 1.16.0"},
       {:jason, ">= 1.0.0"},
+      {:ex_doc, "~> 0.23", only: :dev, runtime: false},
       {:credo, "~> 1.5", only: [:dev, :test], runtime: false}
+    ]
+  end
+
+  defp description do
+    "A simple wrapper to help you interect with the Juno API!"
+  end
+
+  defp package do
+    [
+      licenses: ["MIT"],
+      links: %{"Github" => "https://github.com/boostingtech/junex"}
     ]
   end
 
