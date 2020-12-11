@@ -99,8 +99,10 @@ defmodule Junex.Client do
   Creates and return a new charge
 
   ## Parameters
+    - client: Got from Junex.Client.create/2
     - charge_info: Build mannualy or generated with Junex.Client.get_new_charge/3 or /4
     - billing: Build mannualy or generated with Junex.Client.get_billing/4
+    - mode: :prod | :sandbox
   """
   @spec create_charge(
           %Tesla.Client{},
@@ -122,6 +124,28 @@ defmodule Junex.Client do
       |> JSON.decode(keys: :string)
 
     check_status_code(status, body, "_embedded")
+  end
+
+  @doc """
+  Returns the latest charge status
+
+  ## Parameters
+    - client: Got from Junex.Client.create/2
+    - charge_id: One of results do Junex.Client.create_charge/4
+    - mode: :prod | :sandbox
+  """
+  @spec check_charge_status(%Tesla.Client{}, String.t(), atom()) :: {:ok, map()}
+  def check_charge_status(%Tesla.Client{} = client, charge_id, mode)
+      when is_binary(charge_id) and mode in @modes do
+    {:ok, %{status: status, body: body}} =
+      case get(client, get_url(mode) <> "/charges/#{charge_id}", []) do
+        {:ok, env} ->
+          env
+
+        {:error, error} ->
+          get_conn_error(error)
+      end
+      |> JSON.encode(keys: :string)
   end
 
   @doc """
