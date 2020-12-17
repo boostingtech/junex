@@ -4,13 +4,9 @@ defmodule Junex.Auth do
   """
 
   alias Tesla.Middleware.JSON
-  alias Junex.Utils
+
+  import Junex.Utils, only: [modes: 0, get_auth_url: 1]
   import Tesla, only: [post: 3]
-
-  @sandbox_auth_url Utils.sandbox_auth_url()
-  @prod_auth_url Utils.prod_auth_url()
-
-  @modes Utils.modes()
 
   @doc """
   Return a access_token to be used on other Junex requests
@@ -31,7 +27,7 @@ defmodule Junex.Auth do
           {:ok, String.t()} | {:error, atom() | {atom(), atom()}}
   def get_access_token(opts) when not Keyword.keyword?(opts), do: {:error, :expected_keyword}
 
-  def get_access_token(opts) when not (Keyword.get(opts, :mode, nil) in @modes),
+  def get_access_token(opts) when not (Keyword.get(opts, :mode, nil) in modes()),
     do: {:error, :wrong_mode}
 
   def get_access_token(opts)
@@ -50,9 +46,13 @@ defmodule Junex.Auth do
       do: {:error, :client_id_or_client_secret_not_a_string}
 
   def get_access_token(opts) do
+    client_id = Keyword.get(opts, :client_id)
+    client_secret = Keyword.get(opts, :client_secret)
+    mode = Keyword.get(opts, :mode)
+
     with {:ok, tesla_client} <- create_client(client_id, client_secret),
-         {:ok, response_env} <- post(tesla_client, get_auth_url(mode), @body),
-         {:ok, response} <- JSON.decode(response_env) do
+         {:ok, response_env} <- post(tesla_client, get_auth_url(mode), auth_body()),
+         {:ok, response} <- JSON.decode(response_env, keys: :string) do
       {:ok, response.body["access_token"]}
     else
       {:error, %{status: 401}} ->
@@ -78,9 +78,6 @@ defmodule Junex.Auth do
         raise "Error on getting access_token: #{error}"
     end
   end
-
-  defp get_auth_url(:sandbox), do: @sandbox_auth_url
-  defp get_auth_url(:prod), do: @prod_auth_url
 
   defp create_client(client_id, client_secret) do
     client =

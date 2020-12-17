@@ -88,7 +88,7 @@ defmodule Junex do
   The specified configuration applies globally. Use `Junex.configure/2`
   for setting different configurations on each processes.
 
-  ## Examples
+  ## Example
       
       Junex.configure(
         client_id: System.get_env("CLIENT_ID"),
@@ -106,7 +106,7 @@ defmodule Junex do
     * `:global` - configuration is shared for all processes.
     * `:process` - configuration is isolated for each process.
 
-  ## Examples
+  ## Example
       
       Junex.configure(
         :global,
@@ -121,4 +121,66 @@ defmodule Junex do
   Returns current OAuth configuration settings for accessing twitter server.
   """
   defdelegate configure, to: Junex.Config, as: :get
+
+  # ----------- Junex Charges -----------
+
+  @doc """
+  Returns a charge_info map to be used on Junex.create_charges/2
+
+  ## Example
+      Junex.get_charge_info(
+        description: "description",
+        amount: 123,
+        installments: 2,
+        payment_type: :boleto
+      )
+  """
+  defdelegate get_charge_info(values), to: Junex.API.Charge, as: :get_charge_info
+
+  @doc """
+  Return a new charge_billing_info map to be used on Junex.Client.create_charges/4
+
+  ## Example
+      Junex.get_charge_billing_info(
+        name: "name",
+        document: "document",
+        email: "email",
+        phone: "phone"
+      )
+  """
+  defdelegate get_charge_billing_info(values), to: Junex.API.Charge, as: :get_charge_billing_info
+
+  @doc """
+  Creates and return a new charge
+
+  ## Parameters
+    - client: Got from Junex.Client.create/2
+    - charge_info: Build mannualy or generated with Junex.Client.get_charge_info/3 or /4
+    - billing: Build mannualy or generated with Junex.Client.get_charge_billing_info/4
+    - mode: :prod | :sandbox
+
+  ## Example
+      Junex.create_charges(
+        Junex.create_client(params),
+        Map.merge(Junex.get_charge_info(), Junex.get_charge_billing_info())
+      )
+  """
+  defdelegate create_charges(client, values), to: Junex.API.Charge, as: :create_charges
+
+  @doc """
+  Returns the latest charge status
+
+  ## Parameters
+    - client: Got from Junex.Client.create/2
+    - charge_id: One of results do Junex.Client.create_charges/4
+    - mode: :prod | :sandbox
+
+  ## Example
+      Junex.check_charge_status(
+        Junex.create_client(params),
+        client_id: "client_id",
+        mode: :sandbox
+      )
+  """
+  defdelegate check_charge_status(client, values), to: Junex.API.Charge, as: :check_charge_status
 end

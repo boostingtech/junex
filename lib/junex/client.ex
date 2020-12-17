@@ -45,129 +45,6 @@ defmodule Junex.Client do
         }
 
   @doc """
-  Returns a charge_info map to be used on Junex.Client.create_charges/2
-  """
-  @spec get_charge_info(String.t(), integer(), String.t(), float()) :: total_charge_info()
-  def get_charge_info(description, installments, payment_type, amount)
-      when is_binary(description) and is_integer(installments) and installments > 1 and
-             payment_type in @payment_types and is_float(amount) do
-    case payment_type do
-      :boleto ->
-        %{
-          description: description,
-          installments: installments,
-          paymentTypes: ["BOLETO"],
-          totalAmount: amount
-        }
-
-      :credit_card ->
-        %{
-          description: description,
-          installments: installments,
-          paymentTypes: ["CREDIT_CARD"],
-          totalAmount: amount
-        }
-    end
-  end
-
-  @doc """
-  Retuns a charge_info map with installments == 1 to be used on Junex.Client.create_charges/4
-  """
-  @spec get_charge_info(String.t(), String.t(), float()) :: charge_info()
-  def get_charge_info(description, payment_type, amount)
-      when is_binary(description) and
-             payment_type in @payment_types and is_float(amount) do
-    case payment_type do
-      :boleto ->
-        %{
-          description: description,
-          installments: 1,
-          paymentTypes: ["BOLETO"],
-          totalAmount: amount
-        }
-
-      :credit_card ->
-        %{
-          description: description,
-          installments: 1,
-          paymentTypes: ["CREDIT_CARD"],
-          totalAmount: amount
-        }
-    end
-  end
-
-  @doc """
-  Return a new charge_billing_info map to be used on Junex.Client.create_charges/4
-  """
-  @spec get_charge_billing_info(String.t(), String.t(), String.t(), String.t()) ::
-          charge_billing_info()
-  def get_charge_billing_info(name, doc, email, phone)
-      when is_binary(name) and is_binary(doc) and is_binary(email) and is_binary(phone) do
-    %{
-      name: name,
-      document: doc,
-      email: email,
-      phone: phone
-    }
-  end
-
-  @doc """
-  Creates and return a new charge
-
-  ## Parameters
-    - client: Got from Junex.Client.create/2
-    - charge_info: Build mannualy or generated with Junex.Client.get_charge_info/3 or /4
-    - billing: Build mannualy or generated with Junex.Client.get_charge_billing_info/4
-    - mode: :prod | :sandbox
-  """
-  @spec create_charges(
-          %Tesla.Client{},
-          total_charge_info() | charge_info(),
-          charge_billing_info(),
-          atom()
-        ) ::
-          {:ok, map()} | {:error, atom() | String.t() | {atom(), atom()}}
-  def create_charges(%Tesla.Client{} = client, charge_info, billing, mode)
-      when is_map(charge_info) and is_map(billing) and mode in @modes do
-    {:ok, %{status: status, body: body}} =
-      case post(client, get_url(mode) <> "/charges", %{charge: charge_info, billing: billing}) do
-        {:ok, env} ->
-          IO.inspect(env)
-          env
-
-        {:error, error} ->
-          get_conn_error(error)
-      end
-      |> JSON.decode(keys: :string)
-
-    check_status_code(status, body, "_embedded", "charges")
-  end
-
-  @doc """
-  Returns the latest charge status
-
-  ## Parameters
-    - client: Got from Junex.Client.create/2
-    - charge_id: One of results do Junex.Client.create_charges/4
-    - mode: :prod | :sandbox
-  """
-  @spec check_charge_status(%Tesla.Client{}, String.t(), atom()) :: {:ok, map()}
-  def check_charge_status(%Tesla.Client{} = client, charge_id, mode)
-      when is_binary(charge_id) and mode in @modes do
-    {:ok, %{status: status, body: body}} =
-      case get(client, get_url(mode) <> "/charges/#{charge_id}", []) do
-        {:ok, env} ->
-          env
-
-        {:error, error} ->
-          get_conn_error(error)
-      end
-      |> JSON.encode(keys: :string)
-
-    check_status_code(status, body)
-  end
-
-  @doc """
   Return a card_info map to use on Junex.Client.get_payment_info/2
   """
   @spec get_card_info(String.t()) :: card_info()
@@ -320,8 +197,10 @@ defmodule Junex.Client do
     - resource_token: You can generate one on your Juno's account, is the "Private Token"
 
   ## Examples
-    iex> Junex.Client.create("access_token", "resource_token")
-    {:ok, client}
+      Junex.Client.create(
+        access_token: System.get_env("ACCESS_TOKEN"),
+        resource_token: System.get_env("RESOURCE_TOKEN")
+      )
   """
   @spec create(String.t(), String.t()) :: {:ok, %Tesla.Client{}}
   def create(access_token, resource_token)
@@ -342,65 +221,7 @@ defmodule Junex.Client do
   end
 
   def create(access_token, resource_token)
-      when not is_binary(access_token) or not is_binary(resource_token),
-      do: {:error, :expected_token_to_be_string}
-
-  defp check_status_code(status, body, key1, key2) do
-    case status do
-      401 ->
-        {:error, :unauthenticated}
-
-      422 ->
-        {:error, :unprocessable_entity}
-
-      400 ->
-        {:error, {:bad_request, :invalid_request_data}}
-
-      200 ->
-        {:ok, body[key1][key2]}
-
-      201 ->
-        {:ok, body[key1][key2]}
-
-      500 ->
-        {:error, body["error"]}
-
-      _ ->
-        {:error, :unkown_error}
-    end
+      when not is_binary(access_token) or not is_binary(resource_token) do
+    {:error, :expected_token_to_be_string}
   end
-
-  defp check_status_code(status, body) do
-    case status do
-      401 ->
-        {:error, :unauthenticated}
-
-      422 ->
-        {:error, :unprocessable_entity}
-
-      400 ->
-        {:error, {:bad_request, :invalid_request_data}}
-
-      200 ->
-        {:ok, body}
-
-      201 ->
-        {:ok, body}
-
-      500 ->
-        {:error, body["error"]}
-
-      _ ->
-        {:error, :unkown_error}
-    end
-  end
-
-  defp get_url(:prod), do: @prod_url
-  defp get_url(:sandbox), do: @sandbox_url
-
-  defp get_conn_error(error), do: %{status: 500, body: %{"error" => error}}
-
-  defp get_atom_error, do: {:error, :expected_mode_to_be_valid}
-
-  defp get_client_error, do: {:error, :expected_tesla_client}
 end

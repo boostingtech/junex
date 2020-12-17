@@ -18,9 +18,56 @@ defmodule Junex.Utils do
 
   def modes, do: @modes
   def version, do: @version
-  def prod_url, do: @prod_url
-  def sandbox_url, do: @sandbox_url
-  def prod_auth_url, do: @prod_auth_url
-  def sandbox_auth_url, do: @sandbox_auth_url
-  def @payment_types, do: @payment_types
+  def auth_body, do: @auth_body
+  def payment_types, do: @payment_types
+
+  def get_url(:prod), do: @prod_url
+  def get_url(:sandbox), do: @sandbox_url
+  def get_auth_url(:sandbox), do: @sandbox_auth_url
+  def get_auth_url(:prod), do: @prod_auth_url
+
+  # ------- Junex Response Utils -------
+
+  def check_status_code({:error, %{status: status, body: body}}) do
+    case status do
+      401 ->
+        {:error, :unauthenticated}
+
+      422 ->
+        {:error, :unprocessable_entity}
+
+      400 ->
+        {:error, {:bad_request, :invalid_request_data}}
+
+      500 ->
+        {:error, body["error"] || :internal_server_error}
+
+      _ ->
+        {:error, :unkown_error}
+    end
+  end
+
+  def check_status_code({:ok, %{status, body}}) do
+    case status do
+      200 ->
+        {:ok, body}
+
+      201 ->
+        {:ok, body}
+    end
+  end
+
+  def check_status_code({:ok, %{status: status, body: body}}, key) do
+    check_status_code({:ok, %{status: status, body: body[key]}})
+  end
+
+  def check_status_code({:ok, %{status: status, body: body}}, key1, key2) do
+    check_status_code({:ok, %{status: status, body: body[key1][key2]}})
+  end
+
+  def get_conn_error(error), do: %{status: 500, body: %{"error" => error}}
+
+  def get_atom_error, do: {:error, :expected_mode_to_be_valid}
+
+  def get_client_error, do: {:error, :expected_tesla_client}
 end
