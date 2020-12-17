@@ -4,12 +4,13 @@ defmodule Junex.Auth do
   """
 
   alias Tesla.Middleware.JSON
+  alias Junex.Utils
   import Tesla, only: [post: 3]
 
-  @sandbox_auth_url "https://sandbox.boletobancario.com/authorization-server/oauth/token"
-  @prod_auth_url "https://api.juno.com.br/authorization-server/oauth/token"
+  @sandbox_auth_url Utils.sandbox_auth_url()
+  @prod_auth_url Utils.prod_auth_url()
 
-  @body %{grant_type: :client_credentials}
+  @modes Utils.modes()
 
   @doc """
   Return a access_token to be used on other Junex requests
@@ -29,6 +30,9 @@ defmodule Junex.Auth do
   @spec get_access_token(Keyword.t()) ::
           {:ok, String.t()} | {:error, atom() | {atom(), atom()}}
   def get_access_token(opts) when not Keyword.keyword?(opts), do: {:error, :expected_keyword}
+
+  def get_access_token(opts) when not (Keyword.get(opts, :mode, nil) in @modes),
+    do: {:error, :wrong_mode}
 
   def get_access_token(opts)
       when Keyword.get(opts, :client_id, nil) == nil or

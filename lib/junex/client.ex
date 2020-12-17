@@ -6,15 +6,6 @@ defmodule Junex.Client do
   import Tesla, only: [post: 3, get: 3]
   alias Tesla.Middleware.JSON
 
-  @prod_url "https://api.juno.com.br"
-  @sandbox_url "https://sandbox.boletobancario.com/api-integration"
-
-  @version Mix.Project.config()[:version]
-
-  @modes [:prod, :sandbox]
-
-  @payment_types [:boleto, :credit_card]
-
   @type total_charge_info :: %{
           description: String.t(),
           installments: integer(),
