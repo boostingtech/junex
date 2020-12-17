@@ -64,10 +64,4 @@ defmodule Junex.Utils do
   def check_status_code({:ok, %{status: status, body: body}}, key1, key2) do
     check_status_code({:ok, %{status: status, body: body[key1][key2]}})
   end
-
-  def get_conn_error(error), do: %{status: 500, body: %{"error" => error}}
-
-  def get_atom_error, do: {:error, :expected_mode_to_be_valid}
-
-  def get_client_error, do: {:error, :expected_tesla_client}
 end

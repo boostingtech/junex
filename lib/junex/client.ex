@@ -6,24 +6,6 @@ defmodule Junex.Client do
   import Tesla, only: [post: 3, get: 3]
   alias Tesla.Middleware.JSON
 
-  @type total_charge_info :: %{
-          description: String.t(),
-          installments: integer(),
-          totalAmount: float(),
-          paymentTypes: String.t()
-        }
-  @type charge_info :: %{
-          description: String.t(),
-          installments: integer(),
-          amount: float(),
-          paymentTypes: String.t()
-        }
-  @type charge_billing_info :: %{
-          name: String.t(),
-          document: String.t(),
-          email: String.t(),
-          phone: String.t()
-        }
   @type payment_billing_info :: %{
           email: String.t(),
           address: %{
@@ -123,71 +105,6 @@ defmodule Junex.Client do
 
     check_status_code(status, body)
   end
-
-  @doc """
-  List all possible banks for Juno transfers
-
-  ## Parameters
-    - client: from Junex.Client.create/2
-    - mode: :prod | :sandbox
-
-  ## Examples
-    iex> Junex.Client.list_banks(client, :sandbox)
-    {:ok, [%{"name" => "", "number" => ""}]}
-  """
-  @spec list_banks(%Tesla.Client{}, atom()) ::
-          {:ok, list(map())}
-          | {:error, atom() | String.t() | {atom(), atom()}}
-  def list_banks(%Tesla.Client{} = client, mode) when mode in @modes do
-    {:ok, %{status: status, body: body}} =
-      case get(client, get_url(mode) <> "/data/banks", []) do
-        {:ok, env} ->
-          IO.inspect(env)
-          env
-
-        {:error, error} ->
-          get_conn_error(error)
-      end
-      |> JSON.decode(keys: :string)
-
-    check_status_code(status, body, "_embedded", "banks")
-  end
-
-  def list_banks(%Tesla.Client{} = _client, mode) when mode not in @modes,
-    do: get_atom_error()
-
-  def list_banks(_invalid, _mode), do: get_client_error()
-
-  @doc """
-  Return you current balance!
-
-  ## Parameters
-    - client: Get from Junex.Client.create/2
-    - mode: :prod | :sandbox
-
-  ## Examples
-    iex> Junex.Client.get_balance(client, :sandbox)
-    {:ok, %{"links" => _, "balance" => _, "transferableBalance" => _, "withheldBalance" => _}}
-  """
-  @spec get_balance(%Tesla.Client{}, atom()) :: {:ok, map()} | {:error, atom()}
-  def get_balance(%Tesla.Client{} = client, mode) when mode in @modes do
-    {:ok, %{status: status, body: body}} =
-      case get(client, get_url(mode) <> "/balance", []) do
-        {:ok, env} ->
-          env
-
-        {:error, error} ->
-          get_conn_error(error)
-      end
-      |> JSON.decode(keys: :string)
-
-    check_status_code(status, body)
-  end
-
-  def get_balance(%Tesla.Client{} = _client, mode) when mode not in @modes,
-    do: get_atom_error()
-
-  def get_balance(_invalid, _mode), do: get_client_error()
 
   @doc """
   Returns a new client to perform other requests!

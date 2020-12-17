@@ -83,7 +83,7 @@ defmodule Junex do
   # ----------- Junex Settings -----------
 
   @doc """
-  Provides configuration settings for accessing twitter server. 
+  Provides configuration settings for accessing Juno server. 
 
   The specified configuration applies globally. Use `Junex.configure/2`
   for setting different configurations on each processes.
@@ -99,7 +99,7 @@ defmodule Junex do
   defdelegate configure(tokens), to: Junex.Config, as: :set
 
   @doc """
-  Provides configuration settings for accessing twitter server. 
+  Provides configuration settings for accessing Juno server. 
 
   ## Options
     The `scope` can have one of the following values.
@@ -118,7 +118,7 @@ defmodule Junex do
   defdelegate configure(scope, tokens), to: Junex.Config, as: :set
 
   @doc """
-  Returns current OAuth configuration settings for accessing twitter server.
+  Returns current Junex configuration settings for accessing Juno server.
   """
   defdelegate configure, to: Junex.Config, as: :get
 
@@ -138,7 +138,7 @@ defmodule Junex do
   defdelegate get_charge_info(values), to: Junex.API.Charge, as: :get_charge_info
 
   @doc """
-  Return a new charge_billing_info map to be used on Junex.Client.create_charges/4
+  Return a new charge_billing_info map to be used on Junex.create_charges/2
 
   ## Example
       Junex.get_charge_billing_info(
@@ -154,9 +154,9 @@ defmodule Junex do
   Creates and return a new charge
 
   ## Parameters
-    - client: Got from Junex.Client.create/2
-    - charge_info: Build mannualy or generated with Junex.Client.get_charge_info/3 or /4
-    - billing: Build mannualy or generated with Junex.Client.get_charge_billing_info/4
+    - client: Got from Junex.create_client/1
+    - charge_info: Build mannualy or generated with Junex.get_charge_info/1
+    - billing: Build mannualy or generated with Junex.get_charge_billing_info/1
     - mode: :prod | :sandbox
 
   ## Example
@@ -171,8 +171,8 @@ defmodule Junex do
   Returns the latest charge status
 
   ## Parameters
-    - client: Got from Junex.Client.create/2
-    - charge_id: One of results do Junex.Client.create_charges/4
+    - client: Got from Junex.create_client/1
+    - charge_id: One of results do Junex.create_charges/2
     - mode: :prod | :sandbox
 
   ## Example
@@ -183,4 +183,30 @@ defmodule Junex do
       )
   """
   defdelegate check_charge_status(client, values), to: Junex.API.Charge, as: :check_charge_status
+
+  # ----------- Junex Account -----------
+
+  @doc """
+  List all possible banks for Juno transfers
+
+  ## Parameters
+    - client: from Junex.create_client/1
+    - mode: :prod | :sandbox
+
+  ## Examples
+      Junex.list_banks(Junex.create_client(), :sandbox)
+  """
+  defdelegate list_banks(client, values), to: Junex.API.Account, as: :list_banks
+
+  @doc """
+  Return you current balance!
+
+  ## Parameters
+    - client: Get from Junex.create_client/1
+    - mode: :prod | :sandbox
+
+  ## Examples
+      Junex.get_balance(Junex.create_client(), :sandbox)
+  """
+  defdelegate get_balance(client, values), to: Junex.API.Account, as: :get_balance
 end
