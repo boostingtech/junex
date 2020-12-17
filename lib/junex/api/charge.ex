@@ -3,6 +3,10 @@ defmodule Junex.API.Charge do
   Provides access interface for managing charges.
   """
 
+  alias Tesla.Middleware.JSON
+
+  import Tesla, only: [post: 3, get: 3]
+
   import Junex.Utils, except: [get_auth_url: 1, auth_body: 0]
 
   @type total_charge_info :: %{
@@ -36,6 +40,8 @@ defmodule Junex.API.Charge do
              is_float(Keyword.get(kw, :amount)) do
     if installments == 1, do: do_get_charge_info(kw), else: do_get_total_charge_info(kw)
   end
+
+  def get_charge_info(_), do: {:error, :wrong_opts}
 
   defp do_get_charge_info(kw) do
     description = Keyword.get(kw, :description)
@@ -103,6 +109,8 @@ defmodule Junex.API.Charge do
       phone: Keyword.get(kw, :phone)
     }
   end
+
+  def get_charge_billing_info(_), do: {:error, :wrong_opts}
 
   @doc """
   Creates and return a new charge

@@ -3,6 +3,10 @@ defmodule Junex.API.Account do
   Provides access interface to get account information
   """
 
+  alias Tesla.Middleware.JSON
+
+  import Tesla, only: [get: 3]
+
   import Junex.Utils,
     only: [modes: 0, check_status_code: 1, check_status_code: 2, check_status_code: 3]
 
@@ -28,14 +32,6 @@ defmodule Junex.API.Account do
 
   @doc """
   Return you current balance!
-
-  ## Parameters
-    - client: Get from Junex.Client.create/2
-    - mode: :prod | :sandbox
-
-  ## Examples
-    iex> Junex.Client.get_balance(client, :sandbox)
-    {:ok, %{"links" => _, "balance" => _, "transferableBalance" => _, "withheldBalance" => _}}
   """
   @spec get_balance(%Tesla.Client{}, Keyword.t()) :: {:ok, map()} | {:error, atom()}
   def get_balance(%Tesla.Client{} = client, kw) when Keyword.get(kw, :mode) in modes() do

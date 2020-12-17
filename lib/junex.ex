@@ -226,4 +226,58 @@ defmodule Junex do
       Junex.get_balance(Junex.create_client(), :sandbox)
   """
   defdelegate get_balance(client, values), to: Junex.API.Account, as: :get_balance
+
+  # ----------- Junex Payment -----------
+
+  @doc """
+  Returns a payment_billing_info map to use on Junex.get_payment_info/1
+
+  ## Examples
+      Junex.get_payment_billing_info(
+        email: "email",
+        street: "street",
+        st_number: 12,
+        city: "city",
+        state: "state",
+        complement: "complement",
+        post_code: "post_code"
+      )
+  """
+  defdelegate get_payment_billing_info(values),
+    to: Junex.API.Payment,
+    as: :get_payment_billing_info
+
+  @doc """
+  Returns a payment_info map to be used on Junex.create_payment/2
+
+  ## Parameters
+    - charge_id: Result of one entries of Junex.create_charges/2
+    - card_info: Build mannualy or got from Junex.get_card_info/1
+    - payment_billing_info: Build mannually or got from Junex.get_payment_billing_info/1
+
+  ## Example
+      Junex.get_payment_info(
+        charge_id: "charge_id",
+        card_info: Junex.get_card_info(params),
+        payment_billing_info: Junex.get_payment_billing_info(params)
+      )
+  """
+  defdelegate get_payment_info(values), to: Junex.API.Payment, as: :get_payment_info
+
+  @doc """
+  Creates and returns a new Payment
+
+  ## Parameters
+    - client: Got from Junex.create_client/1
+    - payment_info: Build mannualy or got from Junex.get_payment_info/1
+    - mode: :prod | :sandbox
+
+  ## Example
+      Junex.create_payment(
+        Junex.create_client(params),
+        payment_info: Junex.get_payment_info(params),
+        mode: :sandbox
+      )
+  """
+  defdelegate create_payment(client, values), to: Junex.API.Payment, as: :create_payment
 end
