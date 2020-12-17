@@ -132,11 +132,6 @@ defmodule Junex.API.Charge do
 
   @doc """
   Returns the latest charge status
-
-  ## Parameters
-    - client: Got from Junex.Client.create/2
-    - charge_id: One of results do Junex.Client.create_charges/4
-    - mode: :prod | :sandbox
   """
   @spec check_charge_status(%Tesla.Client{}, Keyword.t()) :: {:ok, map()}
   def check_charge_status(%Tesla.Client{} = client, kw)

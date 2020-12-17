@@ -108,20 +108,15 @@ defmodule Junex.Client do
 
   @doc """
   Returns a new client to perform other requests!
-
-  ## Params
-    - access_token: Got from Junex.Auth.get_access_token
-    - resource_token: You can generate one on your Juno's account, is the "Private Token"
-
-  ## Examples
-      Junex.Client.create(
-        access_token: System.get_env("ACCESS_TOKEN"),
-        resource_token: System.get_env("RESOURCE_TOKEN")
-      )
   """
-  @spec create(String.t(), String.t()) :: {:ok, %Tesla.Client{}}
-  def create(access_token, resource_token)
-      when is_binary(access_token) and is_binary(resource_token) do
+  @spec create(Keyword.t()) :: {:ok, %Tesla.Client{}}
+  def create(kw)
+      when is_binary(Keyword.get(kw, :access_token)) and
+             is_binary(Keyword.get(kw, :resource_token)) do
+    access_token = Keyword.get(kw, :access_token)
+
+    resource_token = Keyword.get(kw, :resource_token)
+
     client =
       Tesla.client([
         Tesla.Middleware.JSON,

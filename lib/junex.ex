@@ -122,6 +122,23 @@ defmodule Junex do
   """
   defdelegate configure, to: Junex.Config, as: :get
 
+  # ----------- Junex Client -----------
+
+  @doc """
+  Returns a new client to perform other requests!
+
+  ## Params
+    - access_token: Got from Junex.Auth.get_access_token
+    - resource_token: You can generate one on your Juno's account, is the "Private Token"
+
+  ## Examples
+      Junex.Client.create(
+        access_token: System.get_env("ACCESS_TOKEN"),
+        resource_token: System.get_env("RESOURCE_TOKEN")
+      )
+  """
+  defdelegate create_client(values), to: Junex.Client, as: :create
+
   # ----------- Junex Charges -----------
 
   @doc """
