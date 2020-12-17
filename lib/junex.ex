@@ -80,8 +80,45 @@ defmodule Junex do
       end
   """
 
+  # ----------- Junex Settings -----------
+
   @doc """
-  Get Juno's tokens configuration values
+  Provides configuration settings for accessing twitter server. 
+
+  The specified configuration applies globally. Use `Junex.configure/2`
+  for setting different configurations on each processes.
+
+  ## Examples
+      
+      Junex.configure(
+        client_id: System.get_env("CLIENT_ID"),
+        client_secret: System.get_env("CLIENT_SECRET"),
+        mode: System.get_env("JUNO_MODE")
+      )
   """
   defdelegate configure(tokens), to: Junex.Config, as: :set
+
+  @doc """
+  Provides configuration settings for accessing twitter server. 
+
+  ## Options
+    The `scope` can have one of the following values.
+    * `:global` - configuration is shared for all processes.
+    * `:process` - configuration is isolated for each process.
+
+  ## Examples
+      
+      Junex.configure(
+        :global,
+        client_id: System.get_env("CLIENT_ID"),
+        client_secret: System.get_env("CLIENT_SECRET"),
+        mode: System.get_env("JUNO_MODE")
+      )
+  """
+  defdelegate configure(scope, tokens), to: Junex.Config, as: :set
+
+  @doc """
+  Returns current OAuth configuration settings for accessing twitter server.
+  """
+  defdelegate configure, to: Junex.Config, as: :get
 end
