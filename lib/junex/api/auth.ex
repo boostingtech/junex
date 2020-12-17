@@ -24,18 +24,28 @@ defmodule Junex.Auth do
 
   ## Examples
 
-      Junex.Auth.get_access_token("client_id", "client_secret", true)
+      Junex.Auth.get_access_token(client_id: "client_id", client_secret: "client_secret", mode: :mode)
   """
-  @spec get_access_token(String.t(), String.t(), atom()) ::
+  @spec get_access_token(Keyword.t()) ::
           {:ok, String.t()} | {:error, atom() | {atom(), atom()}}
-  def get_access_token(_client_id, _client_secret, mode) when not is_atom(mode),
+  def get_access_token(opts) when not Keyword.keyword?(opts), do: {:error, :expected_keyword}
+
+  def get_access_token(opts)
+      when Keyword.get(opts, :client_id, nil) == nil or
+             Keyword.get(opts, :client_secret, nil) == nil or
+             Keyword.get(opts, :mode, nil) == nil,
+      do: {:error, :missing_configs}
+
+  def get_access_token(opts) when not is_atom(Keyword.get(opts, :mode)),
     do: {:error, :expected_atom}
 
-  def get_access_token(client_id, client_secret, mode)
-      when not is_binary(client_id) or (not is_binary(client_secret) and is_atom(mode)),
+  def get_access_token(opts)
+      when not is_binary(Keyword.get(opts, :client_id)) or
+             (not is_binary(Keyword.get(opts, :client_secret)) and
+                is_atom(Keyword.get(opts, :mode))),
       do: {:error, :client_id_or_client_secret_not_a_string}
 
-  def get_access_token(client_id, client_secret, mode) do
+  def get_access_token(opts) do
     with {:ok, tesla_client} <- create_client(client_id, client_secret),
          {:ok, response_env} <- post(tesla_client, get_auth_url(mode), @body),
          {:ok, response} <- JSON.decode(response_env) do
@@ -44,8 +54,8 @@ defmodule Junex.Auth do
       {:error, %{status: 401}} ->
         {:error, {:unauthenticated, :wrong_credentials}}
 
-      {:error, %{status: 500}} ->
-        {:error, response.body["error"]}
+      {:error, %{status: 500, body: body}} ->
+        {:error, body["error"]}
 
       _ ->
         {:error, :unkown_error}

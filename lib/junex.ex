@@ -79,4 +79,9 @@ defmodule Junex do
         end
       end
   """
+
+  @doc """
+  Get Juno's tokens configuration values
+  """
+  defdelegate configure(tokens), to: Junex.Config, as: :set
 end
