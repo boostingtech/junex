@@ -1,4 +1,4 @@
-defmodule Junex.Auth.HTTP do
+defmodule Junex.Auth do
   @moduledoc """
   Exposes the get_access_token function, to get the needed token to make all other requests
   """
@@ -10,10 +10,6 @@ defmodule Junex.Auth.HTTP do
   @prod_auth_url "https://api.juno.com.br/authorization-server/oauth/token"
 
   @body %{grant_type: :client_credentials}
-
-  @behaviour Junex.Auth.Callback
-
-  @impl true
 
   @doc """
   Return a access_token to be used on other Junex requests
@@ -28,8 +24,7 @@ defmodule Junex.Auth.HTTP do
 
   ## Examples
 
-    iex> Junex.Auth.get_access_token("client_id", "client_secret", true)
-    {:error, {:unauthenticated, :wrong_credentials}}
+      Junex.Auth.get_access_token("client_id", "client_secret", true)
   """
   @spec get_access_token(String.t(), String.t(), atom()) ::
           {:ok, String.t()} | {:error, atom() | {atom(), atom()}}
@@ -41,39 +36,37 @@ defmodule Junex.Auth.HTTP do
       do: {:error, :client_id_or_client_secret_not_a_string}
 
   def get_access_token(client_id, client_secret, mode) do
-    {:ok, tesla_client} = create_client(client_id, client_secret)
-
-    {:ok, %{status: status} = response} =
-      case post(tesla_client, get_auth_url(mode), @body) do
-        {:ok, env} ->
-          env
-
-        {:error, error} ->
-          %{status: 500, body: %{"error" => error}}
-      end
-      |> JSON.decode(keys: :string)
-
-    check_status_code(status, response)
-  end
-
-  defp get_auth_url(:sandbox), do: @sandbox_auth_url
-  defp get_auth_url(:prod), do: @prod_auth_url
-
-  defp check_status_code(status, response) do
-    case status do
-      401 ->
+    with {:ok, tesla_client} <- create_client(client_id, client_secret),
+         {:ok, response_env} <- post(tesla_client, get_auth_url(mode), @body),
+         {:ok, response} <- JSON.decode(response_env) do
+      {:ok, response.body["access_token"]}
+    else
+      {:error, %{status: 401}} ->
         {:error, {:unauthenticated, :wrong_credentials}}
 
-      200 ->
-        {:ok, response.body["access_token"]}
-
-      500 ->
+      {:error, %{status: 500}} ->
         {:error, response.body["error"]}
 
       _ ->
         {:error, :unkown_error}
     end
   end
+
+  @doc """
+  Same as get_access_token/3 but raises if any error occurs
+  """
+  def get_access_token!(client_id, client_secret, mode) do
+    case get_access_token(client_id, client_secret, mode) do
+      {:ok, token} ->
+        token
+
+      {:error, error} ->
+        raise "Error on getting access_token: #{error}"
+    end
+  end
+
+  defp get_auth_url(:sandbox), do: @sandbox_auth_url
+  defp get_auth_url(:prod), do: @prod_auth_url
 
   defp create_client(client_id, client_secret) do
     client =
