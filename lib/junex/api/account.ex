@@ -1,7 +1,5 @@
 defmodule Junex.API.Account do
-  @moduledoc """
-  Provides access interface to get account information
-  """
+  @moduledoc false
 
   alias Tesla.Middleware.JSON
 

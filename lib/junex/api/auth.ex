@@ -1,7 +1,5 @@
 defmodule Junex.Auth do
-  @moduledoc """
-  Exposes the get_access_token function, to get the needed token to make all other requests
-  """
+  @moduledoc false
 
   alias Tesla.Middleware.JSON
   alias Junex.Config

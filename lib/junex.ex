@@ -8,8 +8,28 @@ defmodule Junex do
        Junex provide a bunch of helper functions to build the exactly structure that the Juno API requests, so
        consider using them!
     2. All main function receive as last param an atom that could be `:prod` or `:sandbox`
+    3. The `create_client` and `get_access_token` functions can also been called with config from `config.exs`
 
-  # Example
+  ## Config
+  You can provide config information for Junex in three ways:
+    1. On `config.exs` config file
+    2. Calling from code, with `Junex.configure/1 or /2`
+    3. Providing manually all configs
+
+  The available configs are:
+    1. `client_id`
+    2. `client_secret`
+    3. `resource_token`
+    4. `mode`
+
+  Example config on `config.exs`:
+      config :junex, :tokens,
+         client_id: System.get_env("CLIENT_ID"),
+         client_secret: System.get_env("CLIENT_SECRET"),
+         resource_token: System.get_env("RESOURCE_TOKEN"),
+         mode: :prod
+
+  ## Example of use
 
   As an example, see how you could create a charge and a payment:
 
@@ -19,10 +39,14 @@ defmodule Junex do
   After that:
 
       defmodule MyApp.Payment do
-        alias Junex.Auth
-
         def jwt_token(client_id, client_secret) do
-          case Auth.get_access_token(client_id, client_secret, :sandbox) do
+          token_params = [
+            client_id: System.get_env("CLIENT_ID"),
+            client_secret: System.get_env("CLIENT_SECRET"),
+            mode: :sandbox
+          ]
+
+          case Junex.get_access_token(token_params) do
             {:ok, token} ->
               token
 
@@ -37,17 +61,14 @@ defmodule Junex do
   is the `Private Token` that you also can generate on the Integration screen.
 
       defmodule MyApp.Payment do
-        alias Junex.Client
-        
         def charges do
-          {:ok, client} = Client.create(access_token, resource_token)
-          charge_info = Client.get_charge_info/3 or /4
-          charge_billing_info = Client.get_charge_billing_info/4
-
-          case Client.create_charge(client, charge_info, charge_billing_info, :sandbox) do
-            {:ok, charges} ->
+          with {:ok, client} <- Junex.create_client/2 or /1,
+               {:ok, charge_info} <- Junex.get_charge_info(params),
+               {:ok, charge_billing_info} <- Junex.get_charge_billing_info(params),
+               {:ok, charges} <- 
+                  Junex.create_charges(client, charge_info: charge_info, charge_billing_info: charge_billing_info) do
               charges
-
+          else
             {:error, error} ->
               {:error, error}
           end
@@ -58,23 +79,26 @@ defmodule Junex do
   generate the payment in sequence
 
       defmodule MyApp.Payment do
-        alias Junex.Client
-
         def payment do
-          {:ok, client} = Clien.create/2
-          card_info = Client.get_card_info/1
-          payment_billing_info = Client.get_payment_billing_info/3
+          with {:ok, card_info} <- Junex.get_card_info(params),
+               {:ok, payment_billing_info} <- Junex.get_payment_billing_info(params),
+               {:ok, params} <- 
+                  Junex.get_payment_info(card_info: card_info, payment_billing_info: payment_billing_info),
+               payment_results <- charges |> Task.async_stream(&do_payment(&1, params)) do
+              payment_results
+          else
+            error ->
+              error
+          end
+        end
 
-          for charge <- charges do   
-            payment_info = Client.get_payment_info(charge["id"], card_info, payment_billing_info)
+        def do_payment(charge) do
+          case Junex.create_payment(client, payment_info: payment_info, mode: :sandbox) do
+            {:ok, payment} ->
+              payment
 
-            case Client.create_payment(client, payment_info, :sandbox) do
-              {:ok, payment} ->
-                payment
-
-              {:error, error} ->
-                {:error, error}
-            end
+            {:error, error} ->
+              {:error, error}
           end
         end
       end
@@ -133,14 +157,20 @@ defmodule Junex do
 
   ## Examples
       Junex.Client.create(
-        access_token: System.get_env("ACCESS_TOKEN"),
-        resource_token: System.get_env("RESOURCE_TOKEN")
+        System.get_env("ACCESS_TOKEN"),
+        System.get_env("RESOURCE_TOKEN")
       )
   """
   defdelegate create_client(access_token, resource_token), to: Junex.Client, as: :create
 
   @doc """
   Same as `Junex.create_client/2` however uses config from `config.exs`
+
+  ## Params
+    - access_token: Got from Junex.get_access_token/1 or /0
+
+  ## Examples
+      Junex.create_client(access_token)
   """
   defdelegate create_client(access_token), to: Junex.Client, as: :create
 

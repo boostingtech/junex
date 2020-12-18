@@ -1,7 +1,5 @@
 defmodule Junex.Config do
-  @moduledoc """
-  Provides internal config setting
-  """
+  @moduledoc false
 
   def current_scope do
     if Process.get(:_junex, nil), do: :process, else: :global

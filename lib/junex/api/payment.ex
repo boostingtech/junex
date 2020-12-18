@@ -1,7 +1,5 @@
 defmodule Junex.API.Payment do
-  @moduledoc """
-  Provides access to interact with Payments
-  """
+  @moduledoc false
 
   alias Tesla.Middleware.JSON
 
@@ -38,17 +36,18 @@ defmodule Junex.API.Payment do
 
     case parse_kw(params, required_fields) do
       {:ok, kw} ->
-        %{
-          email: kw[:email],
-          address: %{
-            street: kw[:street],
-            number: kw[:st_number],
-            complement: kw[:complement],
-            city: kw[:city],
-            state: kw[:state],
-            postCode: kw[:post_code]
-          }
-        }
+        {:ok,
+         %{
+           email: kw[:email],
+           address: %{
+             street: kw[:street],
+             number: kw[:st_number],
+             complement: kw[:complement],
+             city: kw[:city],
+             state: kw[:state],
+             postCode: kw[:post_code]
+           }
+         }}
 
       error ->
         error
@@ -62,11 +61,12 @@ defmodule Junex.API.Payment do
   def get_payment_info(params) do
     case parse_kw(params, [:charge_id, :payment_billing_info, :card_info]) do
       {:ok, kw} ->
-        %{
-          chargeId: kw[:charge_id],
-          billing: kw[:payment_billing_info],
-          creditCardDetails: kw[:card_info]
-        }
+        {:ok,
+         %{
+           chargeId: kw[:charge_id],
+           billing: kw[:payment_billing_info],
+           creditCardDetails: kw[:card_info]
+         }}
 
       error ->
         error

@@ -1,7 +1,5 @@
 defmodule Junex.Client do
-  @moduledoc """
-  Provides access integration to create a custom Tesla client
-  """
+  @moduledoc false
 
   alias Junex.Config
 

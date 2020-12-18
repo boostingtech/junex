@@ -1,7 +1,5 @@
 defmodule Junex.API.Charge do
-  @moduledoc """
-  Provides access interface for managing charges.
-  """
+  @moduledoc false
 
   alias Tesla.Middleware.JSON
 
@@ -49,40 +47,44 @@ defmodule Junex.API.Charge do
   defp do_get_charge_info(kw) do
     case kw[:payment_type] do
       :boleto ->
-        %{
-          description: kw[:description],
-          installments: kw[:installments],
-          paymentTypes: ["BOLETO"],
-          amount: kw[:amount]
-        }
+        {:ok,
+         %{
+           description: kw[:description],
+           installments: kw[:installments],
+           paymentTypes: ["BOLETO"],
+           amount: kw[:amount]
+         }}
 
       :credit_card ->
-        %{
-          description: kw[:description],
-          installments: kw[:installments],
-          paymentTypes: ["CREDIT_CARD"],
-          amount: kw[:amount]
-        }
+        {:ok,
+         %{
+           description: kw[:description],
+           installments: kw[:installments],
+           paymentTypes: ["CREDIT_CARD"],
+           amount: kw[:amount]
+         }}
     end
   end
 
   defp do_get_total_charge_info(kw) do
     case kw[:payment_type] do
       :boleto ->
-        %{
-          description: kw[:description],
-          installments: kw[:installments],
-          paymentTypes: ["BOLETO"],
-          amount: kw[:amount]
-        }
+        {:ok,
+         %{
+           description: kw[:description],
+           installments: kw[:installments],
+           paymentTypes: ["BOLETO"],
+           amount: kw[:amount]
+         }}
 
       :credit_card ->
-        %{
-          description: kw[:description],
-          installments: kw[:installments],
-          paymentTypes: ["CREDIT_CARD"],
-          amount: kw[:amount]
-        }
+        {:ok,
+         %{
+           description: kw[:description],
+           installments: kw[:installments],
+           paymentTypes: ["CREDIT_CARD"],
+           amount: kw[:amount]
+         }}
     end
   end
 
@@ -93,12 +95,13 @@ defmodule Junex.API.Charge do
   def get_charge_billing_info(params) do
     case parse_kw(params, [:name, :document, :email, :phone]) do
       {:ok, kw} ->
-        %{
-          name: Keyword.get(kw, :name),
-          document: Keyword.get(kw, :document),
-          email: Keyword.get(kw, :email),
-          phone: Keyword.get(kw, :phone)
-        }
+        {:ok,
+         %{
+           name: Keyword.get(kw, :name),
+           document: Keyword.get(kw, :document),
+           email: Keyword.get(kw, :email),
+           phone: Keyword.get(kw, :phone)
+         }}
 
       error ->
         error
