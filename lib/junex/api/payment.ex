@@ -57,7 +57,9 @@ defmodule Junex.API.Payment do
   @doc """
   Returns a payment_info map to be used on Junex.create_payment/2
   """
-  @spec get_payment_info(Keyword.t()) :: payment_info()
+  @spec get_payment_info(Keyword.t()) ::
+          {:ok, payment_info()}
+          | {:param_error, :wrong_params}
   def get_payment_info(params) do
     case parse_kw(params, [:charge_id, :payment_billing_info, :card_info]) do
       {:ok, kw} ->

@@ -91,6 +91,9 @@ defmodule Junex.API.Charge do
   @doc """
   Return a new charge_billing_info map to be used on Junex.create_charges/2
   """
+  @spec get_charge_billing_info(Keyword.t()) ::
+          {:ok, charge_billing_info()}
+          | {:param_error, :wrong_params}
   @spec get_charge_billing_info(Keyword.t()) :: charge_billing_info()
   def get_charge_billing_info(params) do
     case parse_kw(params, [:name, :document, :email, :phone]) do
