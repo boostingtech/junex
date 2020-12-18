@@ -32,12 +32,11 @@ defmodule Junex.API.Charge do
   Returns a charge_info map to be used on Junex.create_charges/2
   """
   @spec get_charge_info(Keyword.t()) :: total_charge_info() | {:error, atom()}
-  def get_charge_info(kw) do
-    with map <- kw_to_map(kw),
-         :ok <- parse_map(map, [:descriptions, :installments, :payment_type, :amount]),
-         :ok <- check_installments(map[:installments]),
-         :ok <- check_payment_type(map[:payment_type]) do
-      if map[:installments] == 1, do: do_get_charge_info(map), else: do_get_total_charge_info(map)
+  def get_charge_info(params) do
+    with {:ok, kw} <- parse_kw(params, [:descriptions, :installments, :payment_type, :amount]),
+         :ok <- check_installments(kw[:installments]),
+         :ok <- check_payment_type(kw[:payment_type]) do
+      if kw[:installments] == 1, do: do_get_charge_info(kw), else: do_get_total_charge_info(kw)
     else
       {:error, error} ->
         {:error, error}
@@ -47,42 +46,42 @@ defmodule Junex.API.Charge do
     end
   end
 
-  defp do_get_charge_info(map) do
-    case map[:payment_type] do
+  defp do_get_charge_info(kw) do
+    case kw[:payment_type] do
       :boleto ->
         %{
-          description: map[:description],
-          installments: map[:installments],
+          description: kw[:description],
+          installments: kw[:installments],
           paymentTypes: ["BOLETO"],
-          amount: map[:amount]
+          amount: kw[:amount]
         }
 
       :credit_card ->
         %{
-          description: map[:description],
-          installments: map[:installments],
+          description: kw[:description],
+          installments: kw[:installments],
           paymentTypes: ["CREDIT_CARD"],
-          amount: map[:amount]
+          amount: kw[:amount]
         }
     end
   end
 
-  defp do_get_total_charge_info(map) do
-    case map[:payment_type] do
+  defp do_get_total_charge_info(kw) do
+    case kw[:payment_type] do
       :boleto ->
         %{
-          description: map[:description],
-          installments: map[:installments],
+          description: kw[:description],
+          installments: kw[:installments],
           paymentTypes: ["BOLETO"],
-          amount: map[:amount]
+          amount: kw[:amount]
         }
 
       :credit_card ->
         %{
-          description: map[:description],
-          installments: map[:installments],
+          description: kw[:description],
+          installments: kw[:installments],
           paymentTypes: ["CREDIT_CARD"],
-          amount: map[:amount]
+          amount: kw[:amount]
         }
     end
   end
@@ -91,16 +90,16 @@ defmodule Junex.API.Charge do
   Return a new charge_billing_info map to be used on Junex.create_charges/2
   """
   @spec get_charge_billing_info(Keyword.t()) :: charge_billing_info()
-  def get_charge_billing_info(kw) do
-    with map <- kw_to_map(kw),
-         :ok <- parse_map(map, [:name, :document, :email, :phone]) do
-      %{
-        name: Keyword.get(kw, :name),
-        document: Keyword.get(kw, :document),
-        email: Keyword.get(kw, :email),
-        phone: Keyword.get(kw, :phone)
-      }
-    else
+  def get_charge_billing_info(params) do
+    case parse_kw(params, [:name, :document, :email, :phone]) do
+      {:ok, kw} ->
+        %{
+          name: Keyword.get(kw, :name),
+          document: Keyword.get(kw, :document),
+          email: Keyword.get(kw, :email),
+          phone: Keyword.get(kw, :phone)
+        }
+
       error ->
         error
     end
@@ -111,12 +110,11 @@ defmodule Junex.API.Charge do
   """
   @spec create_charges(%Tesla.Client{}, Keyword.t()) ::
           {:ok, map()} | {:error, atom() | String.t() | {atom(), atom()}}
-  def create_charges(%Tesla.Client{} = client, kw) do
-    with map <- kw_to_map(kw),
-         :ok <- parse_map(map, [:mode, :charge_info, :billing]),
-         :ok <- check_mode(map[:mode]),
-         charge_body <- %{charge: map[:charge_info], billing: map[:billing]},
-         {:ok, response_env} <- post(client, get_url(map[:mode]) <> "/charges", charge_body),
+  def create_charges(%Tesla.Client{} = client, params) do
+    with {:ok, kw} <- parse_kw(params, [:mode, :charge_info, :billing]),
+         :ok <- check_mode(kw[:mode]),
+         charge_body <- %{charge: kw[:charge_info], billing: kw[:billing]},
+         {:ok, response_env} <- post(client, get_url(kw[:mode]) <> "/charges", charge_body),
          {:ok, response} <- JSON.decode(response_env, keys: :string) do
       check_status_code({:ok, response}, "_embedded", "charges")
     else
@@ -135,12 +133,11 @@ defmodule Junex.API.Charge do
   Returns the latest charge status
   """
   @spec check_charge_status(%Tesla.Client{}, Keyword.t()) :: {:ok, map()}
-  def check_charge_status(%Tesla.Client{} = client, kw) do
-    with map <- kw_to_map(kw),
-         :ok <- parse_map(map, [:charge_id, :mode]),
-         :ok <- check_mode(map[:mode]),
+  def check_charge_status(%Tesla.Client{} = client, params) do
+    with {:ok, kw} <- parse_kw(params, [:charge_id, :mode]),
+         :ok <- check_mode(kw[:mode]),
          {:ok, response_env} <-
-           get(client, get_url(map[:mode]) <> "/charges/#{map[:charge_id]}", []),
+           get(client, get_url(kw[:mode]) <> "/charges/#{kw[:charge_id]}", []),
          {:ok, response} <- JSON.decode(response_env, keys: :string) do
       check_status_code({:ok, response})
     else

@@ -14,11 +14,10 @@ defmodule Junex.API.Account do
   """
   @spec list_banks(%Tesla.Client{}, maybe_improper_list()) ::
           {:error, atom()} | {:ok, list(map())}
-  def list_banks(%Tesla.Client{} = client, kw) when is_list(kw) do
-    with map <- kw_to_map(kw),
-         :ok <- parse_map(map, [:mode]),
-         :ok <- check_mode(map[:mode]),
-         {:ok, response_env} <- get(client, get_url(map[:mode]) <> "/data/banks", []),
+  def list_banks(%Tesla.Client{} = client, params) do
+    with {:ok, kw} <- parse_kw(params, [:mode]),
+         :ok <- check_mode(kw[:mode]),
+         {:ok, response_env} <- get(client, get_url(kw[:mode]) <> "/data/banks", []),
          {:ok, response} <- JSON.decode(response_env, keys: :string) do
       check_status_code({:ok, response}, "_embedded", "banks")
     else
@@ -37,11 +36,10 @@ defmodule Junex.API.Account do
   Return you current balance!
   """
   @spec get_balance(%Tesla.Client{}, Keyword.t()) :: {:ok, map()} | {:error, atom()}
-  def get_balance(%Tesla.Client{} = client, kw) do
-    with map <- kw_to_map(kw),
-         :ok <- parse_map(map, [:mode]),
-         :ok <- check_mode(map[:mode]),
-         {:ok, response_env} <- get(client, get_url(map[:mode]) <> "/balance", []),
+  def get_balance(%Tesla.Client{} = client, params) do
+    with {:ok, kw} <- parse_kw(params, [:mode]),
+         :ok <- check_mode(kw[:mode]),
+         {:ok, response_env} <- get(client, get_url(kw[:mode]) <> "/balance", []),
          {:ok, response} <- JSON.decode(response_env, keys: :string) do
       check_status_code({:ok, response})
     else

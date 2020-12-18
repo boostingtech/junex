@@ -33,22 +33,23 @@ defmodule Junex.API.Payment do
   Returns a payment_billing_info map to use on Junex.get_payment_info/1
   """
   @spec get_payment_billing_info(Keyword.t()) :: payment_billing_info()
-  def get_payment_billing_info(kw) do
-    with map <- kw_to_map(kw),
-         :ok <-
-           parse_map(map, [:email, :st_number, :street, :complement, :city, :state, :post_code]) do
-      %{
-        email: map[:email],
-        address: %{
-          street: map[:street],
-          number: map[:st_number],
-          complement: map[:complement],
-          city: map[:city],
-          state: map[:state],
-          postCode: map[:post_code]
+  def get_payment_billing_info(params) do
+    required_fields = [:email, :st_number, :street, :complement, :city, :state, :post_code]
+
+    case parse_kw(params, required_fields) do
+      {:ok, kw} ->
+        %{
+          email: kw[:email],
+          address: %{
+            street: kw[:street],
+            number: kw[:st_number],
+            complement: kw[:complement],
+            city: kw[:city],
+            state: kw[:state],
+            postCode: kw[:post_code]
+          }
         }
-      }
-    else
+
       error ->
         error
     end
@@ -58,15 +59,15 @@ defmodule Junex.API.Payment do
   Returns a payment_info map to be used on Junex.create_payment/2
   """
   @spec get_payment_info(Keyword.t()) :: payment_info()
-  def get_payment_info(kw) do
-    with map <- kw_to_map(kw),
-         :ok <- parse_map(map, [:charge_id, :payment_billing_info, :card_info]) do
-      %{
-        chargeId: Keyword.get(kw, :charge_id),
-        billing: Keyword.get(kw, :payment_billing_info),
-        creditCardDetails: Keyword.get(kw, :card_info)
-      }
-    else
+  def get_payment_info(params) do
+    case parse_kw(params, [:charge_id, :payment_billing_info, :card_info]) do
+      {:ok, kw} ->
+        %{
+          chargeId: kw[:charge_id],
+          billing: kw[:payment_billing_info],
+          creditCardDetails: kw[:card_info]
+        }
+
       error ->
         error
     end
@@ -89,12 +90,11 @@ defmodule Junex.API.Payment do
   """
   @spec create_payment(%Tesla.Client{}, Keyword.t()) ::
           {:ok, map()} | {:error, atom() | String.t() | {atom(), atom()}}
-  def create_payment(%Tesla.Client{} = client, kw) do
-    with map <- kw_to_map(kw),
-         :ok <- parse_map(map, [:payment_info, :mode]),
-         :ok <- check_mode(map[:mode]),
+  def create_payment(%Tesla.Client{} = client, params) do
+    with {:ok, kw} <- parse_kw(params, [:payment_info, :mode]),
+         :ok <- check_mode(kw[:mode]),
          {:ok, response_env} <-
-           post(client, get_url(map[:mode]) <> "/payments", map[:payment_info]),
+           post(client, get_url(kw[:mode]) <> "/payments", kw[:payment_info]),
          {:ok, response} <- JSON.decode(response_env, keys: :string) do
       check_status_code({:ok, response})
     else

@@ -137,7 +137,12 @@ defmodule Junex do
         resource_token: System.get_env("RESOURCE_TOKEN")
       )
   """
-  defdelegate create_client(values), to: Junex.Client, as: :create
+  defdelegate create_client(access_token, resource_token), to: Junex.Client, as: :create
+
+  @doc """
+  Same as `Junex.create_client/2` however uses config from `config.exs`
+  """
+  defdelegate create_client(access_token), to: Junex.Client, as: :create
 
   # ----------- Junex Charges -----------
 
@@ -304,4 +309,9 @@ defmodule Junex do
       Junex.Auth.get_access_token(client_id: "client_id", client_secret: "client_secret", mode: :mode)
   """
   defdelegate get_access_token(values), to: Junex.Auth, as: :get_access_token
+
+  @doc """
+  Same as Junex.get_access_token/1, however, uses config from `config.exs` 
+  """
+  defdelegate get_access_token, to: Junex.Auth, as: :get_access_token
 end

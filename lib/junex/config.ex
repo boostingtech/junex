@@ -42,4 +42,15 @@ defmodule Junex.Config do
         tuples
     end
   end
+
+  @doc """
+  Checks if required configs exists
+  """
+  def parse_config(config, keys) do
+    if keys in config do
+      {:ok, config}
+    else
+      {:error, :no_config_found}
+    end
+  end
 end
