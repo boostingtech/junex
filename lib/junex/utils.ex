@@ -1,7 +1,5 @@
 defmodule Junex.Utils do
-  @moduledoc """
-  Provides common configs
-  """
+  @moduledoc false
 
   @sandbox_auth_url "https://sandbox.boletobancario.com/authorization-server/oauth/token"
   @prod_auth_url "https://api.juno.com.br/authorization-server/oauth/token"
