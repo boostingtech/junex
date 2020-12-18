@@ -9,7 +9,7 @@ Just add `junex` to your dependencies list on `mix.exs`:
 ```elixir
 def deps do
   [
-    {:junex, "~> 0.1.0"}
+    {:junex, "~> 0.2.0"}
   ]
 end
 ```
