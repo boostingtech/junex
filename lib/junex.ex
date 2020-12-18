@@ -280,4 +280,28 @@ defmodule Junex do
       )
   """
   defdelegate create_payment(client, values), to: Junex.API.Payment, as: :create_payment
+
+  @doc """
+  Return a card_info map to use on Junex.get_payment_info/1
+  """
+  defdelegate get_card_info(values), to: Junex.API.Payment, as: :get_card_info
+
+  # ----------- Junex Auth -----------
+
+  @doc """
+  Return a access_token to be used on other Junex requests
+
+  You can get the client_id and client_secret on the Integration section
+  on your Juno account and generate the pair!
+
+  ## Parameters
+    - client_id: string
+    - client_secret: string
+    - mode: :prod | :sandbox
+
+  ## Examples
+
+      Junex.Auth.get_access_token(client_id: "client_id", client_secret: "client_secret", mode: :mode)
+  """
+  defdelegate get_access_token(values), to: Junex.Auth, as: :get_access_token
 end

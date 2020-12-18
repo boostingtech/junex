@@ -26,6 +26,34 @@ defmodule Junex.Utils do
   def get_auth_url(:sandbox), do: @sandbox_auth_url
   def get_auth_url(:prod), do: @prod_auth_url
 
+  def kw_to_map(kw), do: Enum.into(kw, %{})
+
+  def parse_map(map, required_keys) do
+    map_keys = Map.keys(map)
+
+    if Enum.sort(map_keys) != Enum.sort(required_keys) do
+      {:param_error, :wrong_params}
+    else
+      :ok
+    end
+  end
+
+  def check_mode(mode) do
+    if mode in modes() do
+      :ok
+    else
+      {:param_error, :invalid_mode}
+    end
+  end
+
+  def check_payment_type(pt) do
+    if pt in payment_types() do
+      :ok
+    else
+      {:param_error, :invalid_payment_type}
+    end
+  end
+
   # ------- Junex Response Utils -------
 
   def check_status_code({:error, %{status: status, body: body}}) do
@@ -47,7 +75,7 @@ defmodule Junex.Utils do
     end
   end
 
-  def check_status_code({:ok, %{status, body}}) do
+  def check_status_code({:ok, %{status: status, body: body}}) do
     case status do
       200 ->
         {:ok, body}

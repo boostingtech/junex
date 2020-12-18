@@ -8,7 +8,14 @@ defmodule Junex.API.Account do
   import Tesla, only: [get: 3]
 
   import Junex.Utils,
-    only: [modes: 0, check_status_code: 1, check_status_code: 2, check_status_code: 3]
+    only: [
+      check_status_code: 1,
+      check_status_code: 3,
+      kw_to_map: 1,
+      parse_map: 2,
+      check_mode: 1,
+      get_url: 1
+    ]
 
   @doc """
   List all possible banks for Juno transfers
@@ -16,35 +23,39 @@ defmodule Junex.API.Account do
   @spec list_banks(%Tesla.Client{}, atom()) ::
           {:ok, list(map())}
           | {:error, atom() | String.t() | {atom(), atom()}}
-  def list_banks(%Tesla.Client{} = client, kw) when Keyword.get(kw, :mode) in modes() do
-    mode = Keyword.get(kw, :mode)
-
-    with {:ok, response_env} <- get(client, get_url(mode) <> "/data/banks", []),
+  def list_banks(%Tesla.Client{} = client, kw) when is_list(kw) do
+    with map <- kw_to_map(kw),
+         :ok <- parse_map(map, [:mode]),
+         :ok <- check_mode(map[:mode]),
+         {:ok, response_env} <- get(client, get_url(map[:mode]) <> "/data/banks", []),
          {:ok, response} <- JSON.decode(response_env, keys: :string) do
-      check_status_code(status, body, "_embedded", "banks")
+      check_status_code(response, "_embedded", "banks")
     else
+      {:param_error, error} ->
+        {:error, error}
+
       error ->
         check_status_code(error)
     end
   end
-
-  def list_banks(_invalid, _mode), do: {:error, :wrong_opts}
 
   @doc """
   Return you current balance!
   """
   @spec get_balance(%Tesla.Client{}, Keyword.t()) :: {:ok, map()} | {:error, atom()}
-  def get_balance(%Tesla.Client{} = client, kw) when Keyword.get(kw, :mode) in modes() do
-    mode = Keyword.get(kw, :mode)
-
-    with {:ok, response_env} <- get(client, get_url(mode) <> "/balance", []),
+  def get_balance(%Tesla.Client{} = client, kw) do
+    with map <- kw_to_map(kw),
+         :ok <- parse_map(map, [:mode]),
+         :ok <- check_mode(map[:mode]),
+         {:ok, response_env} <- get(client, get_url(map[:mode]) <> "/balance", []),
          {:ok, response} <- JSON.decode(response_env, keys: :string) do
-      check_status_code(status, body)
+      check_status_code(response)
     else
+      {:param_error, error} ->
+        {:error, error}
+
       error ->
         check_status_code(error)
     end
   end
-
-  def get_balance(_invalid, _mode), do: {:error, :wrong_opts}
 end

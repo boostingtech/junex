@@ -32,63 +32,54 @@ defmodule Junex.API.Charge do
   Returns a charge_info map to be used on Junex.create_charges/2
   """
   @spec get_charge_info(Keyword.t()) :: total_charge_info()
-  def get_charge_info(kw)
-      when is_binary(Keyword.get(kw, :description)) and
-             is_integer(Keyword.get(kw, :installments)) and
-             Keyword.get(kw, :installments) > 0 and
-             Keyword.get(kw, :payment_type) in payment_types() and
-             is_float(Keyword.get(kw, :amount)) do
-    if installments == 1, do: do_get_charge_info(kw), else: do_get_total_charge_info(kw)
+  def get_charge_info(kw) do
+    with map <- kw_to_map(kw),
+         :ok <- parse_map(map, [:descriptions, :installments, :payment_type, :amount]),
+         :ok <- check_installments(map[:installments]),
+         :ok <- check_payment_type(map[:payment_type]) do
+      if map[:installments] == 1, do: do_get_charge_info(map), else: do_get_total_charge_info(map)
+    else
+      error ->
+        error
+    end
   end
 
-  def get_charge_info(_), do: {:error, :wrong_opts}
-
-  defp do_get_charge_info(kw) do
-    description = Keyword.get(kw, :description)
-    payment_type = Keyword.get(kw, :payment_type)
-    amount = Keyword.get(kw, :amount)
-    installments = Keyword.get(kw, :installments) || 1
-
-    case payment_type do
+  defp do_get_charge_info(map) do
+    case map[:payment_type] do
       :boleto ->
         %{
-          description: description,
-          installments: installments,
+          description: map[:description],
+          installments: map[:installments],
           paymentTypes: ["BOLETO"],
-          amount: amount
+          amount: map[:amount]
         }
 
       :credit_card ->
         %{
-          description: description,
-          installments: installments,
+          description: map[:description],
+          installments: map[:installments],
           paymentTypes: ["CREDIT_CARD"],
-          amount: amount
+          amount: map[:amount]
         }
     end
   end
 
-  defp do_get_total_charge_info(kw) do
-    description = Keyword.get(kw, :description)
-    payment_type = Keyword.get(kw, :payment_type)
-    amount = Keyword.get(kw, :amount)
-    installments = Keyword.get(kw, :installments) || 1
-
-    case payment_type do
+  defp do_get_total_charge_info(map) do
+    case map[:payment_type] do
       :boleto ->
         %{
-          description: description,
-          installments: installments,
+          description: map[:description],
+          installments: map[:installments],
           paymentTypes: ["BOLETO"],
-          amount: amount
+          amount: map[:amount]
         }
 
       :credit_card ->
         %{
-          description: description,
-          installments: installments,
+          description: map[:description],
+          installments: map[:installments],
           paymentTypes: ["CREDIT_CARD"],
-          amount: amount
+          amount: map[:amount]
         }
     end
   end
@@ -97,63 +88,65 @@ defmodule Junex.API.Charge do
   Return a new charge_billing_info map to be used on Junex.create_charges/2
   """
   @spec get_charge_billing_info(Keyword.t()) :: charge_billing_info()
-  def get_charge_billing_info(kw)
-      when is_binary(Keyword.get(kw, :name)) and
-             is_binary(Keyword.get(kw, :document)) and
-             is_binary(Keyword.get(kw, :email)) and
-             is_binary(Keyword.get(kw, :phone)) do
-    %{
-      name: Keyword.get(kw, :name),
-      document: Keyword.get(kw, :document),
-      email: Keyword.get(kw, :email),
-      phone: Keyword.get(kw, :phone)
-    }
+  def get_charge_billing_info(kw) do
+    with map <- kw_to_map(kw),
+         :ok <- parse_map(map, [:name, :document, :email, :phone]) do
+      %{
+        name: Keyword.get(kw, :name),
+        document: Keyword.get(kw, :document),
+        email: Keyword.get(kw, :email),
+        phone: Keyword.get(kw, :phone)
+      }
+    else
+      error ->
+        error
+    end
   end
-
-  def get_charge_billing_info(_), do: {:error, :wrong_opts}
 
   @doc """
   Creates and return a new charge
   """
   @spec create_charges(%Tesla.Client{}, Keyword.t()) ::
           {:ok, map()} | {:error, atom() | String.t() | {atom(), atom()}}
-  def create_charges(%Tesla.Client{} = client, kw)
-      when is_map(Keyword.get(kw, :charge_info)) and
-             is_map(Keyword.get(kw, :billing)) and
-             Keyword.get(kw, :mode) in modes do
-    charge_info = Keyword.get(kw, :charge_info)
-    billing = Keyword.get(kw, :billing)
-    mode = Keyword.get(kw, :mode)
-
-    charge_body = %{charge: charge_info, billing: billing}
-
-    with {:ok, response_env} <- post(client, get_url(mode) <> "/charges", charge_body),
+  def create_charges(%Tesla.Client{} = client, kw) do
+    with map <- kw_to_map(kw),
+         :ok <- parse_map(map, [:mode, :charge_info, :billing]),
+         :ok <- check_mode(map[:mode]),
+         charge_body <- %{charge: map[:charge_info], billing: map[:billing]},
+         {:ok, response_env} <- post(client, get_url(map[:mode]) <> "/charges", charge_body),
          {:ok, response} <- JSON.decode(response_env, keys: :string) do
-      check_status_code(status, body, "_embedded", "charges")
+      check_status_code(response, "_embedded", "charges")
     else
+      {:param_error, error} ->
+        {:error, error}
+
       error ->
         check_status_code(error)
     end
   end
 
-  def create_charges(_client, _), do: {:error, :wrong_opts}
-
   @doc """
   Returns the latest charge status
   """
   @spec check_charge_status(%Tesla.Client{}, Keyword.t()) :: {:ok, map()}
-  def check_charge_status(%Tesla.Client{} = client, kw)
-      when is_binary(Keyword.get(kw, :client_id)) and Keyword.get(kw, :mode) in modes() do
-    charge_id = Keyword.get(kw, :charge_id)
-    mode = Keyword.get(kw, :mode)
-
-    with {:ok, response_env} <- get(client, get_url(mode) <> "/charges/#{charge_id}", []),
-         {:ok, response} <- JSON.decode(keys: :string) do
+  def check_charge_status(%Tesla.Client{} = client, kw) do
+    with map <- kw_to_map(kw),
+         :ok <- parse_map(map, [:charge_id, :mode]),
+         :ok <- check_mode(map[:mode]),
+         {:ok, response_env} <-
+           get(client, get_url(map[:mode]) <> "/charges/#{map[:charge_id]}", []),
+         {:ok, response} <- JSON.decode(response_env, keys: :string) do
       check_status_code(response)
     else
-      error -> check_status_code(error)
+      {:param_error, error} ->
+        {:error, error}
+
+      error ->
+        check_status_code(error)
     end
   end
 
-  def check_charge_status(_client, _), do: {:error, :wrong_opts}
+  defp check_installments(installments) do
+    if(installments < 1, do: {:error, :invalid_installments_number}, else: :ok)
+  end
 end
