@@ -1,3 +1,3 @@
 use Mix.Config
 
-config :junex, auth_client: Junex.AuthMock
+config :tesla, adapter: Tesla.Mock

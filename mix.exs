@@ -27,11 +27,12 @@ defmodule Junex.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:mox, "~> 1.0", only: :test},
       {:tesla, "~> 1.4.0"},
       {:hackney, "~> 1.16.0"},
       {:jason, ">= 1.0.0"},
       {:ex_doc, "~> 0.23", only: :dev, runtime: false},
+      {:git_hooks, "~> 0.5.0", only: [:test, :dev], runtime: false},
+      {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
       {:credo, "~> 1.5", only: [:dev, :test], runtime: false}
     ]
   end
