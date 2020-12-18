@@ -1,3 +1,3 @@
-use Mic.Config
+use Mix.Config
 
 config :tesla, adapter: Tesla.Mock
