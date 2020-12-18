@@ -30,7 +30,9 @@ defmodule Junex.API.Payment do
   @doc """
   Returns a payment_billing_info map to use on Junex.get_payment_info/1
   """
-  @spec get_payment_billing_info(Keyword.t()) :: payment_billing_info()
+  @spec get_payment_billing_info(Keyword.t()) ::
+          {:ok, payment_billing_info()}
+          | {:param_error, :wrong_params}
   def get_payment_billing_info(params) do
     required_fields = [:email, :st_number, :street, :complement, :city, :state, :post_code]
 

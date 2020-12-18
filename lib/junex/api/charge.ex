@@ -94,7 +94,6 @@ defmodule Junex.API.Charge do
   @spec get_charge_billing_info(Keyword.t()) ::
           {:ok, charge_billing_info()}
           | {:param_error, :wrong_params}
-  @spec get_charge_billing_info(Keyword.t()) :: charge_billing_info()
   def get_charge_billing_info(params) do
     case parse_kw(params, [:name, :document, :email, :phone]) do
       {:ok, kw} ->
