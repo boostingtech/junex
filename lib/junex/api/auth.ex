@@ -5,16 +5,7 @@ defmodule Junex.Auth do
 
   alias Tesla.Middleware.JSON
 
-  import Junex.Utils,
-    only: [
-      get_auth_url: 1,
-      kw_to_map: 1,
-      parse_map: 2,
-      check_mode: 1,
-      auth_body: 0,
-      check_status_code: 1,
-      check_status_code: 2
-    ]
+  import Junex.Utils
 
   import Tesla, only: [post: 3]
 
@@ -33,10 +24,13 @@ defmodule Junex.Auth do
          {:ok, tesla_client} <- create_client(map[:client_id], map[:client_secret]),
          {:ok, response_env} <- post(tesla_client, get_auth_url(map[:mode]), auth_body()),
          {:ok, response} <- JSON.decode(response_env, keys: :string) do
-      check_status_code(response, "access_token")
+      check_status_code({:ok, response}, "access_token")
     else
       {:param_error, error} ->
         {:error, error}
+
+      {:error, {JSON, _, _}} ->
+        parse_json_error()
 
       error ->
         check_status_code(error)

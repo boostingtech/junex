@@ -7,14 +7,7 @@ defmodule Junex.API.Payment do
 
   import Tesla, only: [post: 3]
 
-  import Junex.Utils,
-    only: [
-      check_status_code: 1,
-      kw_to_map: 1,
-      parse_map: 2,
-      check_mode: 1,
-      get_url: 1
-    ]
+  import Junex.Utils
 
   @type card_info :: %{
           creditCardHash: String.t()
@@ -103,10 +96,13 @@ defmodule Junex.API.Payment do
          {:ok, response_env} <-
            post(client, get_url(map[:mode]) <> "/payments", map[:payment_info]),
          {:ok, response} <- JSON.decode(response_env, keys: :string) do
-      check_status_code(response)
+      check_status_code({:ok, response})
     else
       {:param_error, error} ->
         {:error, error}
+
+      {:error, {JSON, _, _}} ->
+        parse_json_error()
 
       error ->
         check_status_code(error)

@@ -56,7 +56,7 @@ defmodule Junex.Utils do
 
   # ------- Junex Response Utils -------
 
-  def check_status_code({:error, %{status: status, body: body}}) do
+  def check_status_code({:error, %Tesla.Env{status: status, body: body}}) do
     case status do
       401 ->
         {:error, :unauthenticated}
@@ -75,7 +75,7 @@ defmodule Junex.Utils do
     end
   end
 
-  def check_status_code({:ok, %{status: status, body: body}}) do
+  def check_status_code({:ok, %Tesla.Env{status: status, body: body}}) do
     case status do
       200 ->
         {:ok, body}
@@ -85,11 +85,15 @@ defmodule Junex.Utils do
     end
   end
 
-  def check_status_code({:ok, %{status: status, body: body}}, key) do
-    check_status_code({:ok, %{status: status, body: body[key]}})
+  def check_status_code({:ok, %Tesla.Env{status: status, body: body}}, key) do
+    check_status_code({:ok, %Tesla.Env{status: status, body: body[key]}})
   end
 
-  def check_status_code({:ok, %{status: status, body: body}}, key1, key2) do
-    check_status_code({:ok, %{status: status, body: body[key1][key2]}})
+  def check_status_code({:ok, %Tesla.Env{status: status, body: body}}, key1, key2) do
+    check_status_code({:ok, %Tesla.Env{status: status, body: body[key1][key2]}})
   end
+
+  # ------- Junex Error Utils -------
+
+  def parse_json_error, do: {:error, :json_parsing_failed}
 end

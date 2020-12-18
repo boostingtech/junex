@@ -7,32 +7,26 @@ defmodule Junex.API.Account do
 
   import Tesla, only: [get: 3]
 
-  import Junex.Utils,
-    only: [
-      check_status_code: 1,
-      check_status_code: 3,
-      kw_to_map: 1,
-      parse_map: 2,
-      check_mode: 1,
-      get_url: 1
-    ]
+  import Junex.Utils
 
   @doc """
   List all possible banks for Juno transfers
   """
-  @spec list_banks(%Tesla.Client{}, atom()) ::
-          {:ok, list(map())}
-          | {:error, atom() | String.t() | {atom(), atom()}}
+  @spec list_banks(%Tesla.Client{}, maybe_improper_list()) ::
+          {:error, atom()} | {:ok, list(map())}
   def list_banks(%Tesla.Client{} = client, kw) when is_list(kw) do
     with map <- kw_to_map(kw),
          :ok <- parse_map(map, [:mode]),
          :ok <- check_mode(map[:mode]),
          {:ok, response_env} <- get(client, get_url(map[:mode]) <> "/data/banks", []),
          {:ok, response} <- JSON.decode(response_env, keys: :string) do
-      check_status_code(response, "_embedded", "banks")
+      check_status_code({:ok, response}, "_embedded", "banks")
     else
       {:param_error, error} ->
         {:error, error}
+
+      {:error, {JSON, _, _}} ->
+        parse_json_error()
 
       error ->
         check_status_code(error)
@@ -49,10 +43,13 @@ defmodule Junex.API.Account do
          :ok <- check_mode(map[:mode]),
          {:ok, response_env} <- get(client, get_url(map[:mode]) <> "/balance", []),
          {:ok, response} <- JSON.decode(response_env, keys: :string) do
-      check_status_code(response)
+      check_status_code({:ok, response})
     else
       {:param_error, error} ->
         {:error, error}
+
+      {:error, {JSON, _, _}} ->
+        parse_json_error()
 
       error ->
         check_status_code(error)

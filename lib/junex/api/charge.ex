@@ -7,7 +7,7 @@ defmodule Junex.API.Charge do
 
   import Tesla, only: [post: 3, get: 3]
 
-  import Junex.Utils, except: [get_auth_url: 1, auth_body: 0]
+  import Junex.Utils
 
   @type total_charge_info :: %{
           description: String.t(),
@@ -31,7 +31,7 @@ defmodule Junex.API.Charge do
   @doc """
   Returns a charge_info map to be used on Junex.create_charges/2
   """
-  @spec get_charge_info(Keyword.t()) :: total_charge_info()
+  @spec get_charge_info(Keyword.t()) :: total_charge_info() | {:error, atom()}
   def get_charge_info(kw) do
     with map <- kw_to_map(kw),
          :ok <- parse_map(map, [:descriptions, :installments, :payment_type, :amount]),
@@ -39,8 +39,11 @@ defmodule Junex.API.Charge do
          :ok <- check_payment_type(map[:payment_type]) do
       if map[:installments] == 1, do: do_get_charge_info(map), else: do_get_total_charge_info(map)
     else
-      error ->
-        error
+      {:error, error} ->
+        {:error, error}
+
+      {:param_error, error} ->
+        {:error, error}
     end
   end
 
@@ -115,10 +118,13 @@ defmodule Junex.API.Charge do
          charge_body <- %{charge: map[:charge_info], billing: map[:billing]},
          {:ok, response_env} <- post(client, get_url(map[:mode]) <> "/charges", charge_body),
          {:ok, response} <- JSON.decode(response_env, keys: :string) do
-      check_status_code(response, "_embedded", "charges")
+      check_status_code({:ok, response}, "_embedded", "charges")
     else
       {:param_error, error} ->
         {:error, error}
+
+      {:error, {JSON, _, _}} ->
+        parse_json_error()
 
       error ->
         check_status_code(error)
@@ -136,10 +142,13 @@ defmodule Junex.API.Charge do
          {:ok, response_env} <-
            get(client, get_url(map[:mode]) <> "/charges/#{map[:charge_id]}", []),
          {:ok, response} <- JSON.decode(response_env, keys: :string) do
-      check_status_code(response)
+      check_status_code({:ok, response})
     else
       {:param_error, error} ->
         {:error, error}
+
+      {:error, {JSON, _, _}} ->
+        parse_json_error()
 
       error ->
         check_status_code(error)
